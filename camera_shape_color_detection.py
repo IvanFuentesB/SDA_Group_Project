@@ -2,13 +2,10 @@ import cv2
 import numpy as np
 
 # ──────────────────────────────────────────────
-# FORCE DROIDCAM CONNECTION
-# Change this index if needed (0–4)
+# CAMERA SETUP
+# ──────────────────────────────────────────────
 DROIDCAM_INDEX = 1
-
 print(f"🎥 Trying to open DroidCam on index {DROIDCAM_INDEX} ...")
-
-# Use default backend (not DirectShow) — avoids DSHOW exception
 cap = cv2.VideoCapture(DROIDCAM_INDEX)
 
 if not cap.isOpened():
@@ -25,8 +22,6 @@ if not cap.isOpened():
         print("❌ No working camera found.")
         exit()
 
-# ──────────────────────────────────────────────
-# CAMERA SETTINGS
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
@@ -37,11 +32,11 @@ print(f"✅ Using camera index {DROIDCAM_INDEX}")
 print("🎥 Starting detection... Press 'q' to quit.")
 
 # ──────────────────────────────────────────────
-# CONFIG
+# DETECTION CONSTANTS
+# ──────────────────────────────────────────────
 MIN_AREA = 1200
 KERNEL = np.ones((5, 5), np.uint8)
 
-# HSV color ranges
 RED1 = (np.array([0, 120, 70]), np.array([10, 255, 255]))
 RED2 = (np.array([170, 120, 70]), np.array([180, 255, 255]))
 GREEN = (np.array([35, 80, 80]), np.array([85, 255, 255]))
@@ -49,8 +44,9 @@ BLUE = (np.array([90, 80, 80]), np.array([130, 255, 255]))
 YELLOW = (np.array([20, 120, 120]), np.array([35, 255, 255]))
 
 # ──────────────────────────────────────────────
+# IMAGE ENHANCEMENT
+# ──────────────────────────────────────────────
 def enhance_frame(frame):
-    """Sharpen + enhance contrast"""
     lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
     l, a, b = cv2.split(lab)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -59,6 +55,8 @@ def enhance_frame(frame):
     blur = cv2.GaussianBlur(frame, (0, 0), 1.5)
     return cv2.addWeighted(frame, 1.4, blur, -0.4, 0)
 
+# ──────────────────────────────────────────────
+# SHAPE & COLOR DETECTION
 # ──────────────────────────────────────────────
 def detect_shape(c):
     peri = cv2.arcLength(c, True)
@@ -78,7 +76,6 @@ def detect_shape(c):
         return "Circle"
     return "Unknown"
 
-# ──────────────────────────────────────────────
 def color_by_mask(hsv, c):
     mask = np.zeros(hsv.shape[:2], np.uint8)
     cv2.drawContours(mask, [c], -1, 255, -1)
@@ -100,6 +97,8 @@ def color_by_mask(hsv, c):
     return color
 
 # ──────────────────────────────────────────────
+# FIND BLACK MAT
+# ──────────────────────────────────────────────
 def find_black_mat(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     _, mask_dark = cv2.threshold(gray, 70, 255, cv2.THRESH_BINARY_INV)
@@ -111,15 +110,14 @@ def find_black_mat(frame):
     if w * h < 10000:
         return None
     pad_x, pad_y = int(w * 0.1), int(h * 0.1)
-    x, y = max(0, x - pad_x), max(0, y - pad_y)
-    return (x, y, w + 2 * pad_x, h + 2 * pad_y)
+    return (max(0, x - pad_x), max(0, y - pad_y), w + 2 * pad_x, h + 2 * pad_y)
 
-# ──────────────────────────────────────────────
 def draw_label(img, text, pos, color=(255, 255, 255)):
-    """Readable outlined text"""
     cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 4, cv2.LINE_AA)
     cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2, cv2.LINE_AA)
 
+# ──────────────────────────────────────────────
+# MAIN LOOP
 # ──────────────────────────────────────────────
 mat_bbox = None
 
@@ -131,12 +129,10 @@ while True:
 
     frame = cv2.resize(frame, (960, 540))
 
-    # Auto-fix brightness if too dark
     if np.mean(frame) < 50:
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)
         cap.set(cv2.CAP_PROP_EXPOSURE, -1)
 
-    # Detect black mat once
     if mat_bbox is None:
         bbox = find_black_mat(frame)
         if bbox:
@@ -149,12 +145,11 @@ while True:
                 break
             continue
 
-    # Crop and process only mat region
     x, y, w, h = mat_bbox
     crop = frame[y:y+h, x:x+w]
-    crop = enhance_frame(crop)
+    enhanced = enhance_frame(crop)
+    hsv = cv2.cvtColor(enhanced, cv2.COLOR_BGR2HSV)
 
-    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
     mask_total = (
         cv2.inRange(hsv, *RED1) | cv2.inRange(hsv, *RED2) |
         cv2.inRange(hsv, *GREEN) | cv2.inRange(hsv, *BLUE) |
@@ -163,7 +158,7 @@ while True:
     mask_total = cv2.morphologyEx(mask_total, cv2.MORPH_CLOSE, KERNEL)
     mask_total = cv2.morphologyEx(mask_total, cv2.MORPH_OPEN, KERNEL)
 
-    # Find color contours
+    detection = enhanced.copy()
     contours, _ = cv2.findContours(mask_total, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for c in contours:
         if cv2.contourArea(c) < MIN_AREA:
@@ -173,10 +168,41 @@ while True:
         if color == "Unknown":
             continue
         x2, y2, w2, h2 = cv2.boundingRect(c)
-        cv2.rectangle(crop, (x2, y2), (x2+w2, y2+h2), (0, 0, 0), 2)
-        draw_label(crop, f"{color} {shape}", (x2, y2 - 10))
+        cv2.rectangle(detection, (x2, y2), (x2+w2, y2+h2), (0, 0, 0), 2)
+        draw_label(detection, f"{color} {shape}", (x2, y2 - 10))
 
-    cv2.imshow("Block Detection", crop)
+       # ──────────────────────────────────────────────
+    # MAIN DISPLAY — this is the only one shown by default
+    # ──────────────────────────────────────────────
+    cv2.imshow("Block Detection", detection)
+
+    # ──────────────────────────────────────────────
+    # OPTIONAL FILTER VIEWS — UNCOMMENT TO DEBUG
+    # These are for diagnostic purposes only:
+    #
+    # 1️⃣ "Raw Frame" → shows the unprocessed camera image.
+    #     Use it to check lighting, focus, or camera issues.
+    #
+    # 2️⃣ "Enhanced" → shows the sharpened and contrast-corrected version.
+    #     Helps verify that preprocessing is improving visibility.
+    #
+    # 3️⃣ "HSV" → shows the image converted to Hue–Saturation–Value color space.
+    #     Used internally for color segmentation (not meant for visual quality).
+    #
+    # 4️⃣ "Color Mask" → shows a black/white image where white = detected color areas.
+    #     Use it to confirm if your color thresholds are isolating correctly.
+    #
+    # To debug, just uncomment any of these lines ↓↓↓
+    #
+    # cv2.imshow("Raw Frame", frame)
+    # cv2.imshow("Enhanced", enhanced)
+    # cv2.imshow("HSV", cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR))
+    # cv2.imshow("Color Mask", mask_total)
+
+
+    # ──────────────────────────────────────────────
+    # QUIT KEY
+    # ──────────────────────────────────────────────
     if cv2.waitKey(1) & 0xFF in [27, ord('q')]:
         break
 
