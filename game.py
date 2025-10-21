@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from scripts.utils import load_image, load_images
 from scripts.entities import PhysicsEntity
 from scripts.tilemap import Tilemap
+from scripts.clouds import Clouds
 
 @dataclass
 class GameConfig:
     SCREEN_LENGHT = 640
     SCREEN_HEIGHT = 480
+    CAMERA_FOLLOW_SPEED = 5 # Lower is faster
     FRAMERATE = 60
     
 
@@ -30,8 +32,12 @@ class Game:
             'grass': load_images('tiles/grass'),
             'large_decor':load_images('tiles/large_decor'),
             'stone':load_images('tiles/stone'),
-            'player' : load_image('entities/player.png')
+            'player': load_image('entities/player.png'),
+            'background': load_image('background.png'),
+            'clouds': load_images('clouds')
         }
+        
+        self.clouds = Clouds(self.assets['clouds'], count = 16)
         
         self.player = PhysicsEntity(self, 'player', 
                                     (50,50), 
@@ -41,17 +47,25 @@ class Game:
         
         self.tilemap = Tilemap(self, tile_size = 16)
         
+        self.scroll: list[float] = [0, 0]
+        
     def run(self):
         while True:
-            self.display.fill((14, 219, 248))
+            self.display.blit(self.assets['background'], (0, 0))
             
-            self.tilemap.render(self.display)
+            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / GameConfig.CAMERA_FOLLOW_SPEED
+            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / GameConfig.CAMERA_FOLLOW_SPEED
+            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
+            
+            self.clouds.update()
+            self.clouds.render(self.display, offset = render_scroll)
+            
+            self.tilemap.render(self.display, offset = render_scroll)
             
             self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
-            self.player.render(self.display)
+            self.player.render(self.display, offset = render_scroll)
             
-            print(self.tilemap.physics_rects_around(self.player.pos))
-            
+           
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
