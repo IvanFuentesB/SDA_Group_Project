@@ -1,33 +1,39 @@
 import cv2
 import numpy as np
+import time
+
+# ──────────────────────────────────────────────
+# SETTINGS (Mode selection)
+# "steady" = shape must appear for a few seconds
+# "limited" = only accepts one instance of each unique shape
+# ──────────────────────────────────────────────
+DETECTION_MODE = "steady"  # choose between "steady" or "limited"
+CONFIRM_TIME = 2.0  # seconds a shape must persist to be accepted
 
 # ──────────────────────────────────────────────
 # CAMERA SETUP
 # ──────────────────────────────────────────────
 DROIDCAM_INDEX = 1
 print(f"🎥 Trying to open DroidCam on index {DROIDCAM_INDEX} ...")
-cap = cv2.VideoCapture(DROIDCAM_INDEX)  # cap = camera capture object
+cap = cv2.VideoCapture(DROIDCAM_INDEX)
 
+# Try all camera indexes if the first fails
 if not cap.isOpened():
     print("❌ Could not open DroidCam on index 1. Trying all indexes...")
-    found = False
     for i in range(5):
         cap = cv2.VideoCapture(i)
         if cap.isOpened():
             print(f"✅ Found working camera at index {i}")
             DROIDCAM_INDEX = i
-            found = True
             break
-    if not found:
+    else:
         print("❌ No working camera found.")
         exit()
 
-# Set camera properties
+# Configure camera
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
-cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)
-cap.set(cv2.CAP_PROP_EXPOSURE, -1)
+cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))  # set format
 
 print(f"✅ Using camera index {DROIDCAM_INDEX}")
 print("🎥 Starting detection... Press 'q' to quit.")
@@ -35,54 +41,61 @@ print("🎥 Starting detection... Press 'q' to quit.")
 # ──────────────────────────────────────────────
 # DETECTION CONSTANTS
 # ──────────────────────────────────────────────
-MIN_AREA = 1200  # Minimum contour area to consider something a shape
-KERNEL = np.ones((5, 5), np.uint8)  # Used for morphological operations (cleaning masks)
+MIN_AREA = 1200  # smallest contour area to consider a valid shape
+KERNEL = np.ones((5, 5), np.uint8)  # used for cleaning up masks (morphological ops)
 
-# HSV color ranges (for color detection)
+# Color ranges in HSV format
 RED1 = (np.array([0, 120, 70]), np.array([10, 255, 255]))
 RED2 = (np.array([170, 120, 70]), np.array([180, 255, 255]))
 GREEN = (np.array([35, 80, 80]), np.array([85, 255, 255]))
 BLUE = (np.array([90, 80, 80]), np.array([130, 255, 255]))
 YELLOW = (np.array([20, 120, 120]), np.array([35, 255, 255]))
 
+
 # ──────────────────────────────────────────────
-# IMAGE ENHANCEMENT
+# SHAPE CLASS
+# ──────────────────────────────────────────────
+class Shape:
+    def __init__(self, color, shape_type, position):
+        self.color = color
+        self.shape_type = shape_type
+        self.position = position  # (x, y)
+
+    # __repr__ defines how it looks when printed
+    def __repr__(self):
+        return f"Shape(color='{self.color}', type='{self.shape_type}', pos={self.position})"
+
+
+# ──────────────────────────────────────────────
+# HELPER FUNCTIONS
 # ──────────────────────────────────────────────
 def enhance_frame(frame):
-    # Convert to LAB color space — separates brightness (L) from color (A,B)
+    # LAB separates brightness from color → improves contrast
     lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
     l, a, b = cv2.split(lab)
 
-    # CLAHE = Contrast Limited Adaptive Histogram Equalization
-    # It improves contrast and visibility in different lighting
+    # CLAHE improves local contrast (important for weak lighting)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     l = clahe.apply(l)
 
-    # Merge channels back and convert to BGR again
+    # Merge again and sharpen
     frame = cv2.cvtColor(cv2.merge([l, a, b]), cv2.COLOR_LAB2BGR)
-
-    # Add a bit of sharpening
     blur = cv2.GaussianBlur(frame, (0, 0), 1.5)
     return cv2.addWeighted(frame, 1.4, blur, -0.4, 0)
 
-# ──────────────────────────────────────────────
-# SHAPE & COLOR DETECTION
-# ──────────────────────────────────────────────
-def detect_shape(c):
-    # Perimeter of contour
-    peri = cv2.arcLength(c, True)
 
-    # Approximate contour shape (reduces number of points)
+def detect_shape(c):
+    peri = cv2.arcLength(c, True)
     approx = cv2.approxPolyDP(c, 0.025 * peri, True)
-    v = len(approx)  # number of vertices
+    v = len(approx)
     area = cv2.contourArea(c)
     if peri == 0:
         return "Unknown"
 
-    # Circularity formula: (4π * area) / (perimeter²)
+    # Circularity = 4πA/P² (close to 1 if perfect circle)
     circ = 4 * np.pi * area / (peri * peri)
 
-    # Classify shapes based on vertices and circularity
+    # Classification by vertex count + circularity
     if circ > 0.83:
         return "Circle"
     if v == 3:
@@ -93,12 +106,12 @@ def detect_shape(c):
         return "Circle"
     return "Unknown"
 
+
 def color_by_mask(hsv, c):
-    # Create mask for just this contour
     mask = np.zeros(hsv.shape[:2], np.uint8)
     cv2.drawContours(mask, [c], -1, 255, -1)
 
-    # Helper to count pixels inside contour for each color range
+    # helper function → coverage of a color range inside mask
     def cov(low, high):
         m = cv2.inRange(hsv, low, high)
         return cv2.countNonZero(cv2.bitwise_and(m, m, mask=mask))
@@ -117,35 +130,19 @@ def color_by_mask(hsv, c):
         return "Unknown"
     return color
 
-# ──────────────────────────────────────────────
-# FIND BLACK MAT
-# ──────────────────────────────────────────────
-def find_black_mat(frame):
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    _, mask_dark = cv2.threshold(gray, 70, 255, cv2.THRESH_BINARY_INV)
-    contours, _ = cv2.findContours(mask_dark, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if not contours:
-        return None
-
-    largest = max(contours, key=cv2.contourArea)
-    x, y, w, h = cv2.boundingRect(largest)
-
-    if w * h < 10000:
-        return None
-
-    pad_x, pad_y = int(w * 0.1), int(h * 0.1)
-    return (max(0, x - pad_x), max(0, y - pad_y), w + 2 * pad_x, h + 2 * pad_y)
 
 def draw_label(img, text, pos, color=(255, 255, 255)):
-    # Draw outlined label text for readability
+    # draws text with outline (readable on all backgrounds)
     cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 4, cv2.LINE_AA)
     cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2, cv2.LINE_AA)
 
+
 # ──────────────────────────────────────────────
-# MAIN LOOP
+# DETECTION LOOP
 # ──────────────────────────────────────────────
-mat_bbox = None
+last_shape = None
+detection_start_time = 0
+confirmed_shapes = []  # all confirmed and ready to send to game
 
 while True:
     ok, frame = cap.read()
@@ -154,70 +151,90 @@ while True:
         break
 
     frame = cv2.resize(frame, (960, 540))
-
-    # Adjust exposure automatically if image is too dark
-    if np.mean(frame) < 50:
-        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)
-        cap.set(cv2.CAP_PROP_EXPOSURE, -1)
-
-    # Detect black mat first
-    if mat_bbox is None:
-        bbox = find_black_mat(frame)
-        if bbox:
-            mat_bbox = bbox
-            print(f"✅ Mat detected at {bbox}")
-        else:
-            draw_label(frame, "Detecting mat...", (50, 60))
-            cv2.imshow("Block Detection", frame)
-            if cv2.waitKey(1) & 0xFF in [27, ord('q')]:
-                break
-            continue
-
-    # Crop to detected mat
-    x, y, w, h = mat_bbox
-    crop = frame[y:y+h, x:x+w]
-    enhanced = enhance_frame(crop)
+    enhanced = enhance_frame(frame)
     hsv = cv2.cvtColor(enhanced, cv2.COLOR_BGR2HSV)
 
-    # Create mask for all target colors
+    # Combine masks for all colors
     mask_total = (
         cv2.inRange(hsv, *RED1) | cv2.inRange(hsv, *RED2) |
         cv2.inRange(hsv, *GREEN) | cv2.inRange(hsv, *BLUE) |
         cv2.inRange(hsv, *YELLOW)
     )
-    # Clean the mask using morphology
+
     mask_total = cv2.morphologyEx(mask_total, cv2.MORPH_CLOSE, KERNEL)
     mask_total = cv2.morphologyEx(mask_total, cv2.MORPH_OPEN, KERNEL)
 
-    detection = enhanced.copy()
     contours, _ = cv2.findContours(mask_total, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    detection = enhanced.copy()
 
+    detected_shapes = []
     for c in contours:
         if cv2.contourArea(c) < MIN_AREA:
             continue
         color = color_by_mask(hsv, c)
-        shape = detect_shape(c)
+        shape_type = detect_shape(c)
         if color == "Unknown":
             continue
-        x2, y2, w2, h2 = cv2.boundingRect(c)
-        cv2.rectangle(detection, (x2, y2), (x2+w2, y2+h2), (0, 0, 0), 2)
-        draw_label(detection, f"{color} {shape}", (x2, y2 - 10))
+        x, y, w, h = cv2.boundingRect(c)
+        center = (int(x + w / 2), int(y + h / 2))
+        draw_label(detection, f"{color} {shape_type}", (x, y - 10))
+        detected_shapes.append(Shape(color, shape_type, center))
 
     # ──────────────────────────────────────────────
-    # MAIN DISPLAY
+    # SHAPE VALIDATION LOGIC
     # ──────────────────────────────────────────────
+    if detected_shapes:
+        shape = detected_shapes[0]
+
+        if DETECTION_MODE == "steady":
+            # must remain same for CONFIRM_TIME seconds
+            if last_shape and (shape.color, shape.shape_type) == (last_shape.color, last_shape.shape_type):
+                if time.time() - detection_start_time >= CONFIRM_TIME:
+                    confirmed_shapes.append(shape)
+                    print(f"✅ Confirmed shape after {CONFIRM_TIME}s:", shape)
+                    detection_start_time = time.time()
+            else:
+                last_shape = shape
+                detection_start_time = time.time()
+
+        elif DETECTION_MODE == "limited":
+            # instantly accepts new unique combos
+            if not last_shape or (shape.color, shape.shape_type) != (last_shape.color, last_shape.shape_type):
+                confirmed_shapes.append(shape)
+                print("✅ Accepted new unique shape:", shape)
+                last_shape = shape
+
     cv2.imshow("Block Detection", detection)
-
-    # Uncomment below to debug:
-    # cv2.imshow("Raw Frame", frame)
-    # cv2.imshow("Enhanced", enhanced)
-    # cv2.imshow("HSV", cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR))
-    # cv2.imshow("Color Mask", mask_total)
-
-    # Quit key
     if cv2.waitKey(1) & 0xFF in [27, ord('q')]:
         break
 
 cap.release()
 cv2.destroyAllWindows()
 print("🛑 Detection stopped.")
+
+# ──────────────────────────────────────────────
+# PART 2 — FUNCTION TO ACCESS DETECTED SHAPES
+# ──────────────────────────────────────────────
+# this allows the game to call get_detected_shapes()
+# and fetch whatever the camera confirmed so far
+
+def get_detected_shapes():
+    """
+    Returns a list of confirmed Shape objects
+    for use in game.py. Each Shape includes:
+    - shape.color        (str)
+    - shape.shape_type   (str)
+    - shape.position     (tuple of x, y)
+    """
+    return confirmed_shapes
+
+
+#Smth for Razvan}
+## At the top of game.py, just import:
+
+# from camera_shape_color_detection import get_detected_shapes, Shape
+
+
+##Then, inside your game loop:
+
+# shapes_to_draw = get_detected_shapes()
