@@ -7,7 +7,7 @@ import time
 # "steady" = shape must appear for a few seconds
 # "limited" = only accepts one instance of each unique shape
 # ──────────────────────────────────────────────
-DETECTION_MODE = "steady"  # choose between "steady" or "limited"
+DETECTION_MODE = "limited"  # choose between "steady" or "limited"
 CONFIRM_TIME = 2.0  # seconds a shape must persist to be accepted
 
 # ──────────────────────────────────────────────
