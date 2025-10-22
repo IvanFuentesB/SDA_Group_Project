@@ -7,28 +7,43 @@ import time
 # "steady" = shape must appear for a few seconds
 # "limited" = only accepts one instance of each unique shape
 # ──────────────────────────────────────────────
-DETECTION_MODE = "limited"  # choose between "steady" or "limited"
+DETECTION_MODE = "steady"  # choose between "steady" or "limited"
 CONFIRM_TIME = 2.0  # seconds a shape must persist to be accepted
 
 # ──────────────────────────────────────────────
 # CAMERA SETUP
 # ──────────────────────────────────────────────
+# Trying to be smart about camera detection:
+# 1. Try DroidCam first (usually index 1)
+# 2. If not connected, scan all indexes and prefer external cams over built-in
+# 3. Fall back to the laptop’s camera if nothing else works
+# ──────────────────────────────────────────────
 DROIDCAM_INDEX = 1
 print(f"🎥 Trying to open DroidCam on index {DROIDCAM_INDEX} ...")
 cap = cv2.VideoCapture(DROIDCAM_INDEX)
 
-# Try all camera indexes if the first fails
 if not cap.isOpened():
-    print("❌ Could not open DroidCam on index 1. Trying all indexes...")
-    for i in range(5):
-        cap = cv2.VideoCapture(i)
-        if cap.isOpened():
+    print("❌ Could not open DroidCam on index 1. Checking other cameras...")
+
+    # We'll scan available ports and prefer external cams (like index 1 or 2)
+    found = False
+    for i in [1, 2, 0, 3, 4]:  # prioritized: external cams first
+        test_cap = cv2.VideoCapture(i)
+        if test_cap.isOpened():
             print(f"✅ Found working camera at index {i}")
+            cap = test_cap
             DROIDCAM_INDEX = i
+            found = True
             break
-    else:
-        print("❌ No working camera found.")
-        exit()
+
+    if not found:
+        print("❌ No external camera found, trying laptop camera (index 0)...")
+        cap = cv2.VideoCapture(0)
+        if cap.isOpened():
+            print("✅ Using laptop camera as fallback.")
+        else:
+            print("❌ No working camera found at all. Exiting.")
+            exit()
 
 # Configure camera
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
@@ -205,6 +220,17 @@ while True:
                 last_shape = shape
 
     cv2.imshow("Block Detection", detection)
+
+    # ──────────────────────────────────────────────
+    # VISUAL DEBUGGING FILTERS (UNCOMMENT TO VIEW)
+    # ──────────────────────────────────────────────
+    """
+    cv2.imshow("Original Frame", frame)
+    cv2.imshow("Enhanced Frame", enhanced)
+    cv2.imshow("HSV", hsv)
+    cv2.imshow("Mask (All Colors)", mask_total)
+    """
+
     if cv2.waitKey(1) & 0xFF in [27, ord('q')]:
         break
 
