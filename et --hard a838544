@@ -1,0 +1,18 @@
+[33m176d3e5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Camera Shape Color Detection V3>V4 — improved camera detection priority (DroidCam first, external cams next, laptop last)
+[33ma838544[m Camera Shape Color Detection V4 — improved camera detection priority (DroidCam first, external cams next, laptop last)
+[33mce33b51[m Camera Shape Color Detection V4 — added visual debug filters and maintained structure
+[33m5581ab8[m Camera Shape and Color detection V3
+[33mdaa788d[m added player animations
+[33mfeb889c[m Organized the repo into folders
+[33m6a87ee0[m Added animated background and optimized rendering
+[33m1ff43ff[m camera detection v3
+[33m119cad9[m Camera detection v2?
+[33m7620fc8[m[33m ([m[1;33mtag: [m[1;33mv1.0-stable[m[33m)[m Set universal camera+shape+color detection as main working version
+[33m32d914c[m[33m ([m[1;31morigin/sharper-red-detect[m[33m, [m[1;31morigin/shape-fix-test[m[33m, [m[1;32mshape-fix-test[m[33m)[m save progresspython
+[33m4391bc5[m Save working version of block detection (current stable)
+[33m28b2d65[m Added Collision Physics and gravity.
+[33m68ebb30[m Added Physics class and utils file
+[33mdfcc042[m Merge branch 'main' of https://github.com/IvanFuentesB/SDA_Group_Project
+[33m0376347[m Added Idle player animation cycle and some basic keyboard control logic
+[33m0c3baed[m Shape and Color detection v3
+[33mc2ce289[m inital commit test

@@ -7,8 +7,8 @@ import time
 # "steady" = shape must appear for a few seconds
 # "limited" = only accepts one instance of each unique shape
 # ──────────────────────────────────────────────
-DETECTION_MODE = "steady"  # choose between "steady" or "limited"
-CONFIRM_TIME = 2.0  # seconds a shape must persist to be accepted
+DETECTION_MODE = "limited"  # choose between "steady" or "limited"
+CONFIRM_TIME = 0.5  # seconds a shape must persist to be accepted
 
 # ──────────────────────────────────────────────
 # CAMERA SETUP
@@ -219,6 +219,7 @@ while True:
                 print("✅ Accepted new unique shape:", shape)
                 last_shape = shape
 
+    # show main detection output (active)
     cv2.imshow("Block Detection", detection)
 
     # ──────────────────────────────────────────────
@@ -241,9 +242,6 @@ print("🛑 Detection stopped.")
 # ──────────────────────────────────────────────
 # PART 2 — FUNCTION TO ACCESS DETECTED SHAPES
 # ──────────────────────────────────────────────
-# this allows the game to call get_detected_shapes()
-# and fetch whatever the camera confirmed so far
-
 def get_detected_shapes():
     """
     Returns a list of confirmed Shape objects
@@ -255,12 +253,8 @@ def get_detected_shapes():
     return confirmed_shapes
 
 
-#Smth for Razvan}
+# Smth for Razvan
 ## At the top of game.py, just import:
-
 # from camera_shape_color_detection import get_detected_shapes, Shape
-
-
-##Then, inside your game loop:
-
+## Then, inside your game loop:
 # shapes_to_draw = get_detected_shapes()
