@@ -7,7 +7,7 @@ import time
 # "steady" = shape must appear for a few seconds
 # "limited" = only accepts one instance of each unique shape
 # ──────────────────────────────────────────────
-DETECTION_MODE = "limited"  # choose between "steady" or "limited"
+DETECTION_MODE = "LS"  # choose between "steady" or "limited"
 CONFIRM_TIME = 0.5  # seconds a shape must persist to be accepted
 
 # ──────────────────────────────────────────────
@@ -218,6 +218,28 @@ while True:
                 confirmed_shapes.append(shape)
                 print("✅ Accepted new unique shape:", shape)
                 last_shape = shape
+
+       
+       
+        elif DETECTION_MODE == "LS":
+            # ──────────────────────────────────────────────
+            # "LS" (Limited + Steady)
+            # Confirms a shape only if:
+            # - It remains steady for CONFIRM_TIME seconds
+            # - The confirmed shape-color combo isn't the same as the last confirmed one
+            # ──────────────────────────────────────────────
+            if last_shape and (shape.color, shape.shape_type) == (last_shape.color, last_shape.shape_type):
+                if time.time() - detection_start_time >= CONFIRM_TIME:
+                    # Check if same as last confirmed one (avoid duplicates)
+                    if not confirmed_shapes or (shape.color, shape.shape_type) != (confirmed_shapes[-1].color, confirmed_shapes[-1].shape_type):
+                        confirmed_shapes.append(shape)
+                        print(f"✅ LS mode: confirmed shape after {CONFIRM_TIME}s:", shape)
+                    detection_start_time = time.time()
+            else:
+                last_shape = shape
+                detection_start_time = time.time()
+
+           
 
     # show main detection output (active)
     cv2.imshow("Block Detection", detection)
