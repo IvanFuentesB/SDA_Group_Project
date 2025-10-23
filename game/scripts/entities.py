@@ -80,15 +80,18 @@ class Player(PhysicsEntity):
         self.air_time = 0
         self.jumps = 1
         self.wall_slide = False
-        
+        self.slamming = False
     def update(self, tilemap, movement=(0, 0)):
+        
         super().update(tilemap, movement=movement)
+    
         
         self.air_time += 1
         if self.collisions['down']:
             self.air_time = 0
             self.jumps = 1
-        
+            self.slamming = False
+     
         self.wall_slide = False
         if (self.collisions['right'] or self.collisions['left']) and self.air_time > 4:
             self.wall_slide = True
@@ -99,13 +102,16 @@ class Player(PhysicsEntity):
                 self.flip = True
             self.set_action('wall_slide')
             
-        if not self.wall_slide:    
-            if self.air_time > 4:
-                self.set_action('jump')
-            elif movement[0] != 0:
-                self.set_action('run')
+        if not self.wall_slide:
+            if not self.slamming:    
+                if self.air_time > 4:
+                    self.set_action('jump')
+                elif movement[0] != 0:
+                    self.set_action('run')
+                else:
+                    self.set_action('idle')
             else:
-                self.set_action('idle')
+                self.set_action('slam')
 
         if self.velocity[0] > 0:
             self.velocity[0] = max(self.velocity[0] - 0.1, 0)
@@ -127,7 +133,12 @@ class Player(PhysicsEntity):
                 self.jumps = max(0, self.jumps - 1)
                 return True
         elif self.jumps:
+            self.slamming = False
             self.jumps -= 1
-            self.velocity[1] = -3
+            self.velocity[1] = -3.3
             self.air_time = 5
             return True
+    def ground_slam(self):
+        if not self.wall_slide and not self.collisions['down']:
+            self.velocity[1] = 10 
+            self.slamming = True

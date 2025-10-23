@@ -34,7 +34,7 @@ class Tilemap:
         self.tile_size = tile_size
         self.tilemap = {}
         self.offgrid_tiles = [ ]
-        
+        self.lowest_height = None
     def extract(self, id_pairs, keep = False):
         matches = []
         for tile in self.offgrid_tiles.copy():
@@ -77,6 +77,16 @@ class Tilemap:
         self.tilemap = map_data['tilemap']
         self.tile_size = map_data['tile_size']
         self.offgrid_tiles = map_data['offgrid']
+        
+        physics_y_levels = [
+            int(location.split(';')[1])
+            for location, tile in self.tilemap.items()
+            if tile['type'] in PHYSICS_TILES
+        ]
+        if physics_y_levels:
+            self.lowest_height = max(physics_y_levels)
+        else:
+            self.lowest_height = None
         
     def physics_rects_around(self, pos):
         rects = []

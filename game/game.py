@@ -43,6 +43,7 @@ class Game:
             'player/jump': Animation(load_images('entities/player/jump')),
             'player/slide': Animation(load_images('entities/player/slide')),
             'player/wall_slide': Animation(load_images('entities/player/wall_slide')),
+            'player/slam': Animation(load_images('entities/player/slam')),
             'particle/leaf': Animation(load_images('particles/leaf'), img_duration = 20, loop = False),
         }
         
@@ -53,7 +54,7 @@ class Game:
         self.tilemap = Tilemap(self, tile_size = 16)
         
         self.tilemap.load('map.json')
-        
+        print(self.tilemap.lowest_height)
         self.leaf_spawners = []
         for tree in self.tilemap.extract([('large_decor', 2)], keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + tree['pos'][0], 4 + tree['pos'][1], 23, 13))
@@ -102,7 +103,7 @@ class Game:
                     if event.key == pygame.K_UP:
                         self.player.jump()
                     if event.key == pygame.K_DOWN:
-                        self.player.velocity[1] = 10
+                        self.player.ground_slam()
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT:
                         self.movement[0] = False
