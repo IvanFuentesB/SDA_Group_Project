@@ -8,7 +8,7 @@ from scripts.entities import PhysicsEntity, Player, Spikes
 from scripts.tilemap import Tilemap
 from scripts.clouds import Clouds
 from scripts.particle import Particle
-
+from scripts.spark import Spark
 @dataclass
 class GameConfig:
     SCREEN_LENGHT = 640
@@ -51,24 +51,42 @@ class Game:
         
         self.clouds = Clouds(self.assets['clouds'], count = 16)
         
-        self.player = Player(self, (50,50), (self.assets['player'].get_width(), self.assets['player'].get_height()))
+                
+        self.tilemap = Tilemap(self, tile_size = 16)
         
         self.spikes = Spikes(self, 500, 170,(70, 150), (0.5, 2.5))
         
-        self.tilemap = Tilemap(self, tile_size = 16)
+        self.current_level = 0
         
-        self.tilemap.load('map.json')
+        self.load_level(self.current_level)
+ 
+        
+
+    
+    def load_level(self, map_id):
+        self.player = Player(self, (50,50), (self.assets['player'].get_width(), self.assets['player'].get_height()))
+        self.spikes.delete()
+        self.spikes.collided_player = False
+        self.spikes.enable_spawn = False
+        self.tilemap.load('data/maps/' + str(map_id) + '.json')
         self.leaf_spawners = []
         for tree in self.tilemap.extract([('large_decor', 2)], keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + tree['pos'][0], 4 + tree['pos'][1], 23, 13))
-        
-        self.particles = []
-        
+        if map_id is 0:
+            self.spikes.enable_spawn = True
         self.scroll: list[float] = [0, 0]
-        
-    def run(self):
+        self.particles = []
+        self.sparks = []   
+        self.dead = 0    
+
+    def run(self): #! Can use the really cool particles for the big blast
         while True:
             self.display.blit(self.assets['background'], (0, 0))
+            
+            if self.dead:
+                self.dead += 1
+                if self.dead > 40:
+                    self.load_level(self.current_level)
             
             self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / GameConfig.CAMERA_FOLLOW_SPEED
             self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / GameConfig.CAMERA_FOLLOW_SPEED
@@ -84,12 +102,21 @@ class Game:
             
             self.tilemap.render(self.display, offset = render_scroll)
             
-            self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
-            self.player.render(self.display, offset = render_scroll)
-            #print(f"Player: {self.player.pos}")
-            print(self.spikes.collided_player)
+            if not self.dead:
+                self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
+                self.player.render(self.display, offset = render_scroll)
+
             self.spikes.update(self.player.rect())
             self.spikes.render(self.display, offset= render_scroll)
+            
+            if self.spikes.collided_player:
+                self.dead += 1
+            
+            for spark in self.sparks.copy():
+                kill = spark.update()
+                spark.render(self.display, offset = render_scroll)
+                if kill:
+                    self.sparks.remove(spark)
             
             for particle in self.particles.copy():
                 kill = particle.update()
