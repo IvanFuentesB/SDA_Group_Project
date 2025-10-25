@@ -1,7 +1,7 @@
 import pygame
 import math
 import random
-
+import time
 from scripts.particle import Particle
 
 class PhysicsEntity:
@@ -179,4 +179,70 @@ class Player(PhysicsEntity):
                 self.dashing = -60
             else:
                 self.dashing = 60
+
+class Spike:
+    def __init__(self, game, pos, x_velocity):
+        self.game = game
+        self.pos = list(pos)
+        
+        self.x_velocity = x_velocity
+        self.animation = self.game.assets['spike'].copy()
+        self.size = (self.animation.img().get_width(), self.animation.img().get_height())
+        self.spawn_time = pygame.time.get_ticks()
+        self.anim_offset = (-1, -1)   
+        self.collided_player = False
+
+    def rect(self):
+        return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
+
+    def update(self, player_rect):
+        
+        if player_rect.collidepoint((int(self.pos[0]),int(self.pos[1]))):
+            self.collided_player = True
+        
+        self.pos[0] -= self.x_velocity
+        #print(f"Spike: {self.pos}")
+        self.animation.update()
+        
+    def render(self, surface, offset = (0, 0)):
+        surface.blit(self.animation.img(), (self.pos[0] - offset[0] + self.anim_offset[0], self.pos[1] - offset[1] + self.anim_offset[1]))
+        
+        
+class Spikes:
+    def __init__(self,game, spawn_interval_seconds, start_x, y_limits, speed_limits):
+        self.game = game
+        self.spawn_interval = spawn_interval_seconds
+        self.start_x = start_x
+        self.min_y = y_limits[0]
+        self.max_y = y_limits[1]
+        self.min_speed = speed_limits[0]
+        self.max_speed = speed_limits[1]    
+        
+        self.collided_player = False
+        
+        self.last_spawn_ms = 0
+        self.spikes = []
+        
+        self.max_spike_spawn_time_ms = int(15 * 1000)
+        
+    def update(self, player_rect):
+        if pygame.time.get_ticks() - self.last_spawn_ms >= self.spawn_interval:
+            self.last_spawn_ms = pygame.time.get_ticks()
+            start_y = random.randint(self.min_y, self.max_y)
+            spike_velocity = random.uniform(self.min_speed, self.max_speed)
+            
+            self.spikes.append(Spike(self.game,(self.start_x, start_y),spike_velocity))
+        
+        for spike in self.spikes:
+            spike.update(player_rect)
+            
+            if spike.collided_player:
+                self.collided_player = True
+            
+            if pygame.time.get_ticks() - spike.spawn_time >= self.max_spike_spawn_time_ms:
+                self.spikes.remove(spike)
                 
+    def render(self, surface, offset = (0, 0)):
+        for spike in self.spikes:
+            spike.render(surface, offset = offset)
+    

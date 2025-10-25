@@ -4,7 +4,7 @@ import math
 from dataclasses import dataclass
 
 from scripts.utils import load_image, load_images, Animation
-from scripts.entities import PhysicsEntity, Player
+from scripts.entities import PhysicsEntity, Player, Spikes
 from scripts.tilemap import Tilemap
 from scripts.clouds import Clouds
 from scripts.particle import Particle
@@ -42,8 +42,9 @@ class Game:
             'player/run': Animation(load_images('entities/player/run'), img_duration=4),
             'player/jump': Animation(load_images('entities/player/jump')),
             'player/slide': Animation(load_images('entities/player/slide')),
-            'player/wall_slide': Animation(load_images('entities/player/wall_slide')),
+            'player/wall_slide': Animation(load_images('entities/player/wall_slide'), img_duration=3 , loop= True),
             'player/slam': Animation(load_images('entities/player/slam')),
+            'spike': Animation(load_images('/projectile/spike')),
             'particle/leaf': Animation(load_images('particles/leaf'), img_duration = 20, loop = False),
             'particle/particle': Animation(load_images('particles/particle'), img_duration = 6, loop = False)
         }
@@ -51,6 +52,8 @@ class Game:
         self.clouds = Clouds(self.assets['clouds'], count = 16)
         
         self.player = Player(self, (50,50), (self.assets['player'].get_width(), self.assets['player'].get_height()))
+        
+        self.spikes = Spikes(self, 500, 170,(70, 150), (0.5, 2.5))
         
         self.tilemap = Tilemap(self, tile_size = 16)
         
@@ -83,6 +86,10 @@ class Game:
             
             self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
             self.player.render(self.display, offset = render_scroll)
+            #print(f"Player: {self.player.pos}")
+            print(self.spikes.collided_player)
+            self.spikes.update(self.player.rect())
+            self.spikes.render(self.display, offset= render_scroll)
             
             for particle in self.particles.copy():
                 kill = particle.update()
