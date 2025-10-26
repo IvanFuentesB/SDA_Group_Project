@@ -1,7 +1,7 @@
 import pygame
 from dataclasses import dataclass
 
-from scripts.utils import load_images
+from scripts.utils import load_images, load_image
 from scripts.tilemap import Tilemap
 
 
@@ -30,6 +30,7 @@ class Editor:
             'grass': load_images('tiles/grass'),
             'large_decor':load_images('tiles/large_decor'),
             'stone':load_images('tiles/stone'),
+            'door':load_images('tiles/door')
         }
         
         self.movement = [False, False, False, False]
