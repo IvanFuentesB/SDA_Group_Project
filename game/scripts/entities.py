@@ -95,6 +95,12 @@ class Player(PhysicsEntity):
     
         
         self.air_time += 1
+        
+        if self.air_time > 120:
+            if not self.game.dead:
+                self.game.screenshake = max(16, self.game.screenshake)
+            self.game.dead += 1
+        
         if self.collisions['down']:
             self.air_time = 0
             self.jumps = 1
