@@ -98,6 +98,7 @@ class Player(PhysicsEntity):
         
         if self.air_time > 120:
             if not self.game.dead:
+                self.game.sfx['hit'].play()
                 self.game.screenshake = max(16, self.game.screenshake)
             self.game.dead += 1
         
@@ -182,6 +183,7 @@ class Player(PhysicsEntity):
             self.slamming = True
     def dash(self):
         if not self.dashing:
+            self.game.sfx['dash'].play()
             if self.flip:
                 self.dashing = -60
             else:

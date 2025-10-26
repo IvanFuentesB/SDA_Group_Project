@@ -50,6 +50,22 @@ class Game:
             'particle/particle': Animation(load_images('particles/particle'), img_duration = 6, loop = False)
         }
         
+        self.sfx = {
+            'jump': pygame.mixer.Sound('data/sfx/jump.wav'),
+            'dash': pygame.mixer.Sound('data/sfx/dash.wav'),
+            'hit': pygame.mixer.Sound('data/sfx/hit.wav'),
+            'shoot': pygame.mixer.Sound('data/sfx/shoot.wav'),
+            'ambience': pygame.mixer.Sound('data/sfx/ambience.wav'),
+
+        }
+        
+        self.sfx['ambience'].set_volume(0.2)
+        self.sfx['shoot'].set_volume(0.4)
+        self.sfx['hit'].set_volume(0.8)
+        self.sfx['dash'].set_volume(0.3)
+        self.sfx['jump'].set_volume(0.7)
+
+        
         self.clouds = Clouds(self.assets['clouds'], count = 16)
         
                 
@@ -83,6 +99,12 @@ class Game:
         self.transition = -30    
 
     def run(self): #! Can use the really cool particles for the big blast
+        pygame.mixer.music.load('data/music.wav')
+        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.play(-1)
+        
+        self.sfx['ambience'].play(-1)
+        
         while True:
             self.display.blit(self.assets['background'], (0, 0))
             
@@ -126,8 +148,9 @@ class Game:
             self.spikes.update(self.player.rect())
             self.spikes.render(self.display, offset= render_scroll)
             
-            if self.spikes.collided_player:
+            if self.spikes.collided_player and self.dead == 0:
                 self.screenshake = max(16, self.screenshake)
+                self.sfx['hit'].play()
                 self.dead += 1
             
             for spark in self.sparks.copy():
@@ -153,7 +176,8 @@ class Game:
                     if event.key == pygame.K_RIGHT:
                         self.movement[1] = True
                     if event.key == pygame.K_UP:
-                        self.player.jump()
+                        if self.player.jump():
+                            self.sfx['jump'].play()
                     if event.key == pygame.K_DOWN:
                         self.player.ground_slam()
                     if event.key == pygame.K_x:
