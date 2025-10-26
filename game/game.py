@@ -20,6 +20,8 @@ class GameConfig:
     RENDER_SCALE = 2.0
 
 
+#def get_shape():
+#    return shape_type, shape_color
                 
     
 class Level:
@@ -91,29 +93,30 @@ class Game:
                 
         self.tilemap = Tilemap(self, tile_size = 16)
         
-        self.spikes = Spikes(self, 500, 170,(70, 150), (0.5, 2.5))
+        self.spikes = Spikes(self, 200, 500,(-60, 170), (0.5, 2.5))
         
         self.square = Shape(self, 'square', 'red', (1, 1))
         self.triangle = Shape(self, 'triangle', 'red', (10, 1))
-        self.circle = Circle(self, 'red', (140, 100), (16, 16))
         self.current_level = 0
         
         self.level_attributes = {
             0: Level(0,False,Shape(self, 'square', 'red', (12, 4)),(103 ,129)),
+            1: Level(1, False, Circle(self, 'blue', (135, 2), (16, 16)),(103, 129)),
+            2: Level(2, True, None, (103, 129))
         }
         
         self.load_level(self.current_level)
  
         self.screenshake = 0
 
+        self.switched_boss_music = False
     
     def load_level(self, map_id):
         self.player = Player(self, self.level_attributes[map_id].player_pos, (self.assets['player'].get_width(), self.assets['player'].get_height()))
         self.spikes.delete()
         self.spikes.collided_player = False
-        self.spikes.enable_spawn = False
+        self.spikes.enable_spawn = self.level_attributes[self.current_level].has_spikes
         self.tilemap.load('data/maps/' + str(map_id) + '.json')
-        self.circle.spawned = True
         self.leaf_spawners = []
         for tree in self.tilemap.extract([('large_decor', 2)], keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + tree['pos'][0], 4 + tree['pos'][1], 23, 13))
@@ -125,13 +128,13 @@ class Game:
         self.dead = 0
         self.transition = -30
         
-        if map_id is 0:
-            self.spikes.enable_spawn = False
             
                 
 
     def run(self): #! Can use the really cool particles for the big blast
-        pygame.mixer.music.load('data/music.wav')
+        if self.current_level != 2:
+            pygame.mixer.music.load('data/music.wav')
+            
         pygame.mixer.music.set_volume(0.5)
         pygame.mixer.music.play(-1)
         
@@ -143,20 +146,14 @@ class Game:
             self.display.blit(self.assets['background'], (0, 0))
             
             self.screenshake = max(0, self.screenshake - 1)
-            
-            if self.circle.spawned:
-                if self.player.rect().colliderect(self.circle.rect()):
-                    if self.player.rect().x < self.circle.rect().x:
-                        self.circle.movement[1] = True
-                    if self.player.rect().x > self.circle.rect().x:
-                        self.circle.movement[0] = True
-            else:
-                self.circle.movement = [False, False]  
+               
+
             
             if any(tile.get('type') == 'door' for tile in self.tilemap.tiles_around(self.player.pos)):
                 self.transition += 1 
                 if self.transition > 30:
-                    self.current_level = max(GameConfig.TOTAL_LEVELS - 1, self.current_level + 1)
+                    self.current_level = min(GameConfig.TOTAL_LEVELS - 1, self.current_level + 1)
+
                     self.load_level(self.current_level)
             if self.transition < 0:
                 self.transition += 1
@@ -186,11 +183,23 @@ class Game:
             if not self.dead:
                 self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
                 self.player.render(self.display, offset = render_scroll)
-            print(self.player.pos)
-            if self.circle.spawned:
-                #print(f"Circle velocity[0]: {self.circle.velocity[0]}")
-                self.circle.update(self.tilemap,(self.circle.movement[1] - self.circle.movement[0], 0))
-                self.circle.render(self.display, offset= render_scroll)
+            print(f"Player pos:{self.player.pos}")
+            #print(f"Player Tile pos:{self.player.pos[0]//self.tilemap.tile_size, self.player.pos[1]//self.tilemap.tile_size}")
+            
+            if isinstance(self.level_attributes[self.current_level].shape, Circle):
+                circle : Circle = self.level_attributes[self.current_level].shape # type:ignore
+                if circle.spawned:
+                    
+                    if self.player.rect().colliderect(self.level_attributes[self.current_level].shape.rect()): #type:ignore
+                        if self.player.rect().x < self.level_attributes[self.current_level].shape.rect().x:   #type:ignore
+                            self.level_attributes[self.current_level].shape.movement[1] = True  #type:ignore
+                        if self.player.rect().x > self.level_attributes[self.current_level].shape.rect().x:  #type:ignore
+                            self.level_attributes[self.current_level].shape.movement[0] = True  #type:ignore
+                    self.level_attributes[self.current_level].shape.update(self.tilemap,(self.level_attributes[self.current_level].shape.movement[1] - self.level_attributes[self.current_level].shape.movement[0], 0))  #type:ignore
+                    self.level_attributes[self.current_level].shape.render(self.display, offset= render_scroll)    #type:ignore
+                else:
+                    self.level_attributes[self.current_level].shape.movement = [False, False] #type:ignore
+            
             
             self.spikes.update(self.player.rect())
             self.spikes.render(self.display, offset= render_scroll)
@@ -231,11 +240,28 @@ class Game:
                         self.player.dash()
                     if event.key == pygame.K_e:
                         self.level_attributes[self.current_level].shape.spawn()
+                    if event.key == pygame.K_r:
+                        self.level_attributes[self.current_level].shape.spawned = True #type:ignore
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT:
                         self.movement[0] = False
                     if event.key == pygame.K_RIGHT:
                         self.movement[1] = False
+            
+            if self.current_level == 1: 
+               if self.level_attributes[1].shape.pos[1] > 190: #type:ignore
+                    for y in range(1, 9):
+                        loc = f"16;{y}"
+                        self.tilemap.tilemap.pop(loc, None)
+                    self.tilemap.autotile()
+            if not self.switched_boss_music and self.current_level == 2:
+                self.switched_boss_music = True
+                pygame.mixer.music.unload()
+                pygame.mixer.music.load('data/boss_music.mp3')
+                pygame.mixer.music.set_volume(0.5)
+                pygame.mixer.music.play(-1)
+                    
+            
             
             if self.transition:
                 transition_surf = pygame.Surface(self.display.get_size())
