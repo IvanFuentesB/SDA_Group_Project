@@ -9,6 +9,7 @@ from scripts.tilemap import Tilemap
 from scripts.clouds import Clouds
 from scripts.particle import Particle
 from scripts.spark import Spark
+from scripts.shape import Shape, Circle
 @dataclass
 class GameConfig:
     SCREEN_LENGHT = 640
@@ -16,7 +17,19 @@ class GameConfig:
     CAMERA_FOLLOW_SPEED = 5 # Lower is faster
     FRAMERATE = 60
     TOTAL_LEVELS = 3
+    RENDER_SCALE = 2.0
+
+
+                
     
+class Level:
+    def __init__(self, id, has_spikes, shape, player_pos):
+        self.id = id
+        self.has_spikes = has_spikes
+        self.shape = shape
+        self.player_pos = list(player_pos)
+
+        
 
 class Game:
     def __init__(self) -> None:
@@ -37,6 +50,12 @@ class Game:
             'large_decor':load_images('tiles/large_decor'),
             'stone':load_images('tiles/stone'),
             'door': load_images('tiles/door'),
+            'square':load_images('tiles/square'),
+            'triangle':load_images('tiles/triangle'),
+            'circle/red': Animation(load_images('tiles/circle/red'), img_duration = 4, loop = True),
+            'circle/green': Animation(load_images('tiles/circle/green'), img_duration = 4,loop = True),
+            'circle/blue': Animation(load_images('tiles/circle/blue'), img_duration = 4,loop = True),
+            'circle/yellow': Animation(load_images('tiles/circle/yellow'), img_duration = 4,loop = True),
             'player': load_image('entities/player.png'),
             'background': load_image('background.png'),
             'clouds': load_images('clouds'),
@@ -74,7 +93,14 @@ class Game:
         
         self.spikes = Spikes(self, 500, 170,(70, 150), (0.5, 2.5))
         
+        self.square = Shape(self, 'square', 'red', (1, 1))
+        self.triangle = Shape(self, 'triangle', 'red', (10, 1))
+        self.circle = Circle(self, 'red', (140, 100), (16, 16))
         self.current_level = 0
+        
+        self.level_attributes = {
+            0: Level(0,False,Shape(self, 'square', 'red', (12, 4)),(103 ,129)),
+        }
         
         self.load_level(self.current_level)
  
@@ -82,22 +108,27 @@ class Game:
 
     
     def load_level(self, map_id):
-        self.player = Player(self, (50,50), (self.assets['player'].get_width(), self.assets['player'].get_height()))
+        self.player = Player(self, self.level_attributes[map_id].player_pos, (self.assets['player'].get_width(), self.assets['player'].get_height()))
         self.spikes.delete()
         self.spikes.collided_player = False
         self.spikes.enable_spawn = False
         self.tilemap.load('data/maps/' + str(map_id) + '.json')
+        self.circle.spawned = True
         self.leaf_spawners = []
         for tree in self.tilemap.extract([('large_decor', 2)], keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + tree['pos'][0], 4 + tree['pos'][1], 23, 13))
-        if map_id is 0:
-            self.spikes.enable_spawn = True
+
         self.scroll: list[float] = [0, 0]
         self.particles = []
         self.sparks = []
            
         self.dead = 0
-        self.transition = -30    
+        self.transition = -30
+        
+        if map_id is 0:
+            self.spikes.enable_spawn = False
+            
+                
 
     def run(self): #! Can use the really cool particles for the big blast
         pygame.mixer.music.load('data/music.wav')
@@ -107,10 +138,20 @@ class Game:
         self.sfx['ambience'].play(-1)
         
         while True:
+            
+            
             self.display.blit(self.assets['background'], (0, 0))
             
             self.screenshake = max(0, self.screenshake - 1)
             
+            if self.circle.spawned:
+                if self.player.rect().colliderect(self.circle.rect()):
+                    if self.player.rect().x < self.circle.rect().x:
+                        self.circle.movement[1] = True
+                    if self.player.rect().x > self.circle.rect().x:
+                        self.circle.movement[0] = True
+            else:
+                self.circle.movement = [False, False]  
             
             if any(tile.get('type') == 'door' for tile in self.tilemap.tiles_around(self.player.pos)):
                 self.transition += 1 
@@ -145,7 +186,12 @@ class Game:
             if not self.dead:
                 self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
                 self.player.render(self.display, offset = render_scroll)
-
+            print(self.player.pos)
+            if self.circle.spawned:
+                #print(f"Circle velocity[0]: {self.circle.velocity[0]}")
+                self.circle.update(self.tilemap,(self.circle.movement[1] - self.circle.movement[0], 0))
+                self.circle.render(self.display, offset= render_scroll)
+            
             self.spikes.update(self.player.rect())
             self.spikes.render(self.display, offset= render_scroll)
             
@@ -183,6 +229,8 @@ class Game:
                         self.player.ground_slam()
                     if event.key == pygame.K_x:
                         self.player.dash()
+                    if event.key == pygame.K_e:
+                        self.level_attributes[self.current_level].shape.spawn()
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT:
                         self.movement[0] = False
