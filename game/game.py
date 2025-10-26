@@ -25,10 +25,8 @@ class Game:
         pygame.display.set_caption('sigma sigma boy')
         self.screen = pygame.display.set_mode((GameConfig.SCREEN_LENGHT, GameConfig.SCREEN_HEIGHT))
 
-        self.display = pygame.Surface((GameConfig.SCREEN_LENGHT//2, GameConfig.SCREEN_HEIGHT//2), pygame.SRCALPHA)
-        self.display_2 = pygame.Surface((GameConfig.SCREEN_LENGHT//2, GameConfig.SCREEN_HEIGHT//2))
-        
-        
+        self.display = pygame.Surface((GameConfig.SCREEN_LENGHT//2, GameConfig.SCREEN_HEIGHT//2))
+
         self.clock = pygame.time.Clock()
 
         self.movement = [False, False]
@@ -86,8 +84,7 @@ class Game:
 
     def run(self): #! Can use the really cool particles for the big blast
         while True:
-            self.display.fill((0, 0, 0, 0))
-            self.display_2.blit(self.assets['background'], (0, 0))
+            self.display.blit(self.assets['background'], (0, 0))
             
             self.screenshake = max(0, self.screenshake - 1)
             
@@ -139,9 +136,6 @@ class Game:
                 if kill:
                     self.sparks.remove(spark)
             
-            display_mask = pygame.mask.from_surface(self.display)    
-            display_sillhouete = display_mask.to_surface(setcolor=(0, 0, 0, 180), unsetcolor=(0, 0, 0, 0))
-            self.display_2.blit(display_sillhouete, (0, 0))
             for particle in self.particles.copy():
                 kill = particle.update()
                 particle.render(self.display, offset = render_scroll)
