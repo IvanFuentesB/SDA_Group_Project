@@ -1,6 +1,7 @@
 import pygame
 import random
 import math
+import os
 from dataclasses import dataclass
 
 from scripts.utils import load_image, load_images, Animation
@@ -45,7 +46,15 @@ class Game:
 
         self.display = pygame.Surface((GameConfig.SCREEN_LENGHT//2, GameConfig.SCREEN_HEIGHT//2))
 
-        self.camera = Camera(self, "localhost", 1883)
+        with open('config.txt', 'r') as f:
+            config = dict(
+                line.strip().split('=')
+                for line in f
+                if line.strip() and not line.startswith('#')
+            )
+        mqtt_ip = config.get('mqtt_ip')
+        mqtt_port = int(config.get('mqtt_port', '1883'))
+        self.camera = Camera(self, mqtt_ip, mqtt_port)
         
         self.clock = pygame.time.Clock()
 
@@ -142,7 +151,7 @@ class Game:
                 2:'green',
                 3:'yellow'
         }            
-        shape_type = random.randint(0, 2)
+        shape_type = random.randint(0, 1)
         shape_color = random.randint(0, 3)
     
         if shape_type != 2:

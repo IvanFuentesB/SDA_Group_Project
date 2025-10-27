@@ -49,6 +49,8 @@ missing module named pyimod02_importers - imported by C:\Users\Razvan\AppData\Lo
 missing module named '_typeshed.importlib' - imported by pkg_resources (conditional)
 missing module named jnius - imported by platformdirs.android (delayed, conditional, optional)
 missing module named android - imported by platformdirs.android (delayed, conditional, optional)
+missing module named dns - imported by paho.mqtt.client (optional)
+missing module named socks - imported by paho.mqtt.client (optional)
 missing module named OpenGL - imported by pygame (delayed)
 missing module named _dummy_thread - imported by numpy._core.arrayprint (optional)
 missing module named 'numpy_distutils.cpuinfo' - imported by numpy.f2py.diagnose (delayed, conditional, optional)
