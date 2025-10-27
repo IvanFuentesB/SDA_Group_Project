@@ -2,6 +2,9 @@ import cv2
 import numpy as np
 import time
 
+# 🆕 Add this import to send detected shapes over MQTT
+from mqtt_publisher import send_shape
+
 # ──────────────────────────────────────────────
 # SETTINGS (Mode selection)
 # "steady" = shape must appear for a few seconds
@@ -219,40 +222,24 @@ while True:
                 print("✅ Accepted new unique shape:", shape)
                 last_shape = shape
 
-       
-       
         elif DETECTION_MODE == "LS":
-            # ──────────────────────────────────────────────
-            # "LS" (Limited + Steady)
-            # Confirms a shape only if:
-            # - It remains steady for CONFIRM_TIME seconds
-            # - The confirmed shape-color combo isn't the same as the last confirmed one
-            # ──────────────────────────────────────────────
+            # "Limited + Steady"
             if last_shape and (shape.color, shape.shape_type) == (last_shape.color, last_shape.shape_type):
                 if time.time() - detection_start_time >= CONFIRM_TIME:
-                    # Check if same as last confirmed one (avoid duplicates)
                     if not confirmed_shapes or (shape.color, shape.shape_type) != (confirmed_shapes[-1].color, confirmed_shapes[-1].shape_type):
                         confirmed_shapes.append(shape)
                         print(f"✅ LS mode: confirmed shape after {CONFIRM_TIME}s:", shape)
+
+                        # 🆕 Send shape data to the game PC through MQTT
+                        send_shape(shape)
+
                     detection_start_time = time.time()
             else:
                 last_shape = shape
                 detection_start_time = time.time()
 
-           
-
     # show main detection output (active)
     cv2.imshow("Block Detection", detection)
-
-    # ──────────────────────────────────────────────
-    # VISUAL DEBUGGING FILTERS (UNCOMMENT TO VIEW)
-    # ──────────────────────────────────────────────
-    """
-    cv2.imshow("Original Frame", frame)
-    cv2.imshow("Enhanced Frame", enhanced)
-    cv2.imshow("HSV", hsv)
-    cv2.imshow("Mask (All Colors)", mask_total)
-    """
 
     if cv2.waitKey(1) & 0xFF in [27, ord('q')]:
         break
