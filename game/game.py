@@ -10,6 +10,8 @@ from scripts.clouds import Clouds
 from scripts.particle import Particle
 from scripts.spark import Spark
 from scripts.shape import Shape, Circle
+from scripts.camera import Camera
+
 @dataclass
 class GameConfig:
     SCREEN_LENGHT = 640
@@ -18,10 +20,6 @@ class GameConfig:
     FRAMERATE = 60
     TOTAL_LEVELS = 3
     RENDER_SCALE = 2.0
-
-
-def get_shape():
-   return None
 
 
 
@@ -47,6 +45,8 @@ class Game:
 
         self.display = pygame.Surface((GameConfig.SCREEN_LENGHT//2, GameConfig.SCREEN_HEIGHT//2))
 
+        self.camera = Camera(self, "10.135.241.12", 1883)
+        
         self.clock = pygame.time.Clock()
 
         self.movement = [False, False]
@@ -98,13 +98,16 @@ class Game:
           
         self.tilemap = Tilemap(self, tile_size = 16)
         
-        self.spikes = Spikes(self, 400, 500,(-60, 170), (0.5, 2.5))
+        self.spikes = Spikes(self, 300, 500,(-60, 300), (0.5, 2.5))
         
         self.current_level = 0
         
+        self.boss_shape = Circle(self, 'red', (0,0), (16,16)) #placeholder, will be automatically generated later
+        self.current_shape = None
+        
         self.level_attributes = {
-            0: Level(self, 0,False,Shape(self, 'square', 'red', (12, 4)),(103 ,129)),
-            1: Level(self, 1, False, Circle(self, 'blue', (135, 2), (16, 16)),(103, 129)),
+            0: Level(self, 0,False,Shape(self, 'triangle', 'blue', (12, 4)),(103 ,129)),
+            1: Level(self, 1, False, Circle(self, 'green', (135, 2), (16, 16)),(103, 129)),
             2: Level(self, 2, True, self.boss_shape, (103, 129))
         }
         
@@ -120,7 +123,7 @@ class Game:
         self.boss_big_blast_interval_ms = 20000
         self.boss_big_blast_max_cooldown_ms = 10000
         self.big_blast = False
-        self.boss_shape = None
+       
     def generate_random_shape(self, pos : list):
     
         shape_list = {
@@ -134,7 +137,7 @@ class Game:
                 2:'green',
                 3:'yellow'
         }            
-        shape_type = random.randint(0, 1)
+        shape_type = random.randint(0, 2)
         shape_color = random.randint(0, 3)
     
         if shape_type != 2:
@@ -180,10 +183,12 @@ class Game:
             
             self.screenshake = max(0, self.screenshake - 1)
             
-            detected_shape = get_shape()
-            self.level_attributes[self.current_level].spawned_shape = False
-            if detected_shape.type == self.level_attributes[self.current_level].shape.type and detected_shape.color == self.level_attributes[self.current_level].shape.color:
-                self.level_attributes[self.current_level].spawned_shape = True
+            self.current_shape = self.camera.get_latest_shape()
+            if self.current_shape is not None:
+                #print(f"Detected shape:{self.current_shape.type, self.current_shape.color}") #type:ignore
+                if self.current_shape.type == self.level_attributes[self.current_level].shape.type and self.current_shape.color == self.level_attributes[self.current_level].shape.color: #type: ignore
+                    self.level_attributes[self.current_level].spawned_shape = True
+                    #print("Shape imported")  
             
             if any(tile.get('type') == 'door' for tile in self.tilemap.tiles_around(self.player.pos)):
                 self.transition += 1 
@@ -200,6 +205,8 @@ class Game:
                 if self.dead >= 10:
                     self.transition = min(self.transition + 1, 30)
                 if self.dead > 40:
+                    self.big_blast = False
+                    self.level_attributes[self.current_level].spawned_shape = False
                     self.load_level(self.current_level)
             
             self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / GameConfig.CAMERA_FOLLOW_SPEED
@@ -222,28 +229,34 @@ class Game:
             #print(f"Player pos:{self.player.pos}")
            # print(f"Player Tile pos:{self.player.pos[0]//self.tilemap.tile_size, self.player.pos[1]//self.tilemap.tile_size}")
             
-            if isinstance(self.level_attributes[self.current_level].shape, Circle):
-                circle : Circle = self.level_attributes[self.current_level].shape # type:ignore
-                if circle.spawned:
+            if self.level_attributes[self.current_level].spawned_shape:
+                if isinstance(self.level_attributes[self.current_level].shape, Circle):
+                    circle : Circle = self.level_attributes[self.current_level].shape # type:ignore
+                    circle.spawned = True
+                    if circle.spawned:
                     
-                    if self.player.rect().colliderect(self.level_attributes[self.current_level].shape.rect()): #type:ignore
-                        if self.player.rect().x < self.level_attributes[self.current_level].shape.rect().x:   #type:ignore
-                            self.level_attributes[self.current_level].shape.movement[1] = True  #type:ignore
-                        if self.player.rect().x > self.level_attributes[self.current_level].shape.rect().x:  #type:ignore
-                            self.level_attributes[self.current_level].shape.movement[0] = True  #type:ignore
-                    self.level_attributes[self.current_level].shape.update(self.tilemap,(self.level_attributes[self.current_level].shape.movement[1] - self.level_attributes[self.current_level].shape.movement[0], 0))  #type:ignore
-                    self.level_attributes[self.current_level].shape.render(self.display, offset= render_scroll)    #type:ignore
-                else:
-                    self.level_attributes[self.current_level].shape.movement = [False, False] #type:ignore
+                        if self.player.rect().colliderect(self.level_attributes[self.current_level].shape.rect()): #type:ignore
+                            if self.player.rect().x < self.level_attributes[self.current_level].shape.rect().x:   #type:ignore
+                                self.level_attributes[self.current_level].shape.movement[1] = True  #type:ignore
+                            if self.player.rect().x > self.level_attributes[self.current_level].shape.rect().x:  #type:ignore
+                                self.level_attributes[self.current_level].shape.movement[0] = True  #type:ignore
+                        else:
+                            self.level_attributes[self.current_level].shape.movement = [False, False] #type:ignore
+                        
+                        self.level_attributes[self.current_level].shape.update(self.tilemap,(self.level_attributes[self.current_level].shape.movement[1] - self.level_attributes[self.current_level].shape.movement[0], 0))  #type:ignore
+                        self.level_attributes[self.current_level].shape.render(self.display, offset= render_scroll)    #type:ignore
+                if isinstance(self.level_attributes[self.current_level].shape, Shape):
+                    if not self.level_attributes[self.current_level].shape.spawned:
+                        self.level_attributes[self.current_level].shape.spawn()
+                        
             
             #for spike in self.spikes.spikes:
              #   print(spike.pos)
-            if self.big_blast and pygame.time.get_ticks() - self.boss_timer_start_ms < self.boss_big_blast_max_cooldown_ms:
-                pass
-            else:
+            if not (self.big_blast and pygame.time.get_ticks() - self.boss_timer_start_ms < self.boss_big_blast_max_cooldown_ms): #type: ignore
                 self.spikes.update(self.player.rect(), self.tilemap,generate_random=not self.big_blast)
                 self.spikes.render(self.display, offset= render_scroll)
             
+              
             
             if self.spikes.collided_player and self.dead == 0:
                 self.screenshake = max(16, self.screenshake)
@@ -279,10 +292,6 @@ class Game:
                         self.player.ground_slam()
                     if event.key == pygame.K_x:
                         self.player.dash()
-                    if event.key == pygame.K_e:
-                        self.level_attributes[self.current_level].shape.spawn()
-                    if event.key == pygame.K_r:
-                        self.level_attributes[self.current_level].shape.spawned = True #type:ignore
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT:
                         self.movement[0] = False
@@ -315,7 +324,7 @@ class Game:
                         self.spikes.delete()
                         self.spikes.generate_vertical_spike_list(10, 50)
                         self.boss_shape = self.generate_random_shape([6, 9])
-                        self.level_attributes[self.current_level].shape = self.boss_shape
+                        self.level_attributes[self.current_level].shape = self.boss_shape #type: ignore
                         self.sfx['blast'].play(0)
                 
                 if self.big_blast:
@@ -327,13 +336,14 @@ class Game:
                     
                     self.display.blit(shape_img, (screen_x, screen_y))
                     if self.level_attributes[self.current_level].spawned_shape == True:
-                        self.boss_shape.spawn() 
+                        self.boss_shape.spawn() #type: ignore
                     
                     if pygame.time.get_ticks() - self.boss_timer_start_ms >= self.boss_big_blast_max_cooldown_ms + 1000:
                         #print("Spaned shape")
                         self.big_blast = False
                         self.boss_timer_start_ms = pygame.time.get_ticks()
-                        self.boss_shape.delete()
+                        self.boss_shape.delete() #type: ignore
+                        self.level_attributes[self.current_level].spawned_shape = False
                         
                     
                     

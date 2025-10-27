@@ -6,10 +6,11 @@ class Shape: # This is just for triangles and squares, circles are a bit more co
         self.type = shape_type
         self.color = color
         self.tile_pos = list(tile_pos)
+        self.spawned = False
         self.colors = {
             'red': 0,
-            'blue': 1,
-            'green': 2,
+            'green': 1,
+            'blue': 2,
             'yellow': 3
         }
         self.size = {
@@ -19,6 +20,7 @@ class Shape: # This is just for triangles and squares, circles are a bit more co
         
     def spawn(self):
        #print(self.type, self.color, self.tile_pos)
+       self.spawned = True
        location = f"{self.tile_pos[0]};{self.tile_pos[1]}"
        self.game.tilemap.tilemap[location] = {
            'type': self.type,
@@ -27,7 +29,8 @@ class Shape: # This is just for triangles and squares, circles are a bit more co
        }
     def delete(self):
         location = f"{self.tile_pos[0]};{self.tile_pos[1]}"
-        del self.game.tilemap.tilemap[location]
+        if self.game.tilemap.tilemap[location] is not None:
+            del self.game.tilemap.tilemap[location]
 class Circle():
     def __init__(self, game, color, pos, size):
         self.game = game
