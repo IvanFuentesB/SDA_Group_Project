@@ -18,7 +18,7 @@ import json
 #
 # 2. Replace the IP below with that number.
 # =========================================================
-BROKER_IP = "10.135.241.12"  # 👈 replace this with the game PC’s IP
+BROKER_IP = "localhost"  # 👈 replace this with the game PC’s IP
 TOPIC = "cv/shapes"
 
 # =========================================================

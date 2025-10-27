@@ -4,7 +4,7 @@ import math
 from dataclasses import dataclass
 
 from scripts.utils import load_image, load_images, Animation
-from scripts.entities import PhysicsEntity, Player, Spikes
+from scripts.entities import PhysicsEntity, Player, Spikes, Enemy
 from scripts.tilemap import Tilemap
 from scripts.clouds import Clouds
 from scripts.particle import Particle
@@ -18,7 +18,7 @@ class GameConfig:
     SCREEN_HEIGHT = 480
     CAMERA_FOLLOW_SPEED = 5 # Lower is faster
     FRAMERATE = 60
-    TOTAL_LEVELS = 3
+    TOTAL_LEVELS = 4
     RENDER_SCALE = 2.0
 
 
@@ -45,7 +45,7 @@ class Game:
 
         self.display = pygame.Surface((GameConfig.SCREEN_LENGHT//2, GameConfig.SCREEN_HEIGHT//2))
 
-        self.camera = Camera(self, "10.135.241.12", 1883)
+        self.camera = Camera(self, "localhost", 1883)
         
         self.clock = pygame.time.Clock()
 
@@ -74,7 +74,11 @@ class Game:
             'player/slam': Animation(load_images('entities/player/slam')),
             'spike': Animation(load_images('/projectile/spike')),
             'particle/leaf': Animation(load_images('particles/leaf'), img_duration = 20, loop = False),
-            'particle/particle': Animation(load_images('particles/particle'), img_duration = 6, loop = False)
+            'particle/particle': Animation(load_images('particles/particle'), img_duration = 6, loop = False),
+            'enemy/idle': Animation(load_images('entities/enemy/idle'), img_duration=6),
+            'enemy/run': Animation(load_images('entities/enemy/run'),img_duration=4),        
+            'gun': load_image('gun.png'),
+            'projectile': load_image('projectile.png'),
         }
         
         self.sfx = {
@@ -98,17 +102,18 @@ class Game:
           
         self.tilemap = Tilemap(self, tile_size = 16)
         
-        self.spikes = Spikes(self, 300, 500,(-60, 300), (0.5, 2.5))
+        self.spikes = Spikes(self, 200, 500,(-60, 300), (0.5, 2.5))
         
-        self.current_level = 0
+        self.current_level = 3
         
         self.boss_shape = Circle(self, 'red', (0,0), (16,16)) #placeholder, will be automatically generated later
         self.current_shape = None
         
         self.level_attributes = {
-            0: Level(self, 0,False,Shape(self, 'triangle', 'blue', (12, 4)),(103 ,129)),
+            0: Level(self, 0,False,Shape(self, 'square', 'blue', (12, 4)),(103 ,129)),
             1: Level(self, 1, False, Circle(self, 'green', (135, 2), (16, 16)),(103, 129)),
-            2: Level(self, 2, True, self.boss_shape, (103, 129))
+            2: Level(self, 2, True, self.boss_shape, (103, 129)),
+            3: Level(self, 3, False, None,(103, 129))
         }
         
 
@@ -121,7 +126,7 @@ class Game:
         self.font = pygame.font.Font(None, 14)
         self.boss_timer_start_ms = None
         self.boss_big_blast_interval_ms = 20000
-        self.boss_big_blast_max_cooldown_ms = 10000
+        self.boss_big_blast_max_cooldown_ms = 7000
         self.big_blast = False
        
     def generate_random_shape(self, pos : list):
@@ -151,12 +156,22 @@ class Game:
         self.spikes.collided_player = False
         self.spikes.enable_spawn = self.level_attributes[self.current_level].has_spikes
         self.tilemap.load('data/maps/' + str(map_id) + '.json')
+        
         self.leaf_spawners = []
         for tree in self.tilemap.extract([('large_decor', 2)], keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + tree['pos'][0], 4 + tree['pos'][1], 23, 13))
 
+        self.enemies = []
+        for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
+            if spawner['variant'] == 0:
+                self.player.pos = spawner['pos']
+            else:
+                self.enemies.append(Enemy(self, spawner['pos'], (8, 15)))
+            
+        
         self.scroll: list[float] = [0, 0]
         self.particles = []
+        self.projectiles = []
         self.sparks = []
            
         self.dead = 0
@@ -164,6 +179,7 @@ class Game:
         
         if map_id == 2:
             self.boss_timer_start_ms = pygame.time.get_ticks()
+            self.boss_total_time = pygame.time.get_ticks()
       
                 
 
@@ -190,12 +206,13 @@ class Game:
                     self.level_attributes[self.current_level].spawned_shape = True
                     #print("Shape imported")  
             
-            if any(tile.get('type') == 'door' for tile in self.tilemap.tiles_around(self.player.pos)):
+            if not len(self.enemies) and any(tile.get('type') == 'door' for tile in self.tilemap.tiles_around(self.player.pos)):
                 self.transition += 1 
                 if self.transition > 30:
                     self.current_level = min(GameConfig.TOTAL_LEVELS - 1, self.current_level + 1)
 
                     self.load_level(self.current_level)
+                    
             if self.transition < 0:
                 self.transition += 1
                 
@@ -223,12 +240,42 @@ class Game:
             
             self.tilemap.render(self.display, offset = render_scroll)
             
+            for enemy in self.enemies.copy():
+                kill = enemy.update(self.tilemap, (0, 0))
+                enemy.render(self.display, offset=render_scroll)
+                if kill:
+                    self.enemies.remove(enemy)
+            
             if not self.dead:
                 self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
                 self.player.render(self.display, offset = render_scroll)
-            #print(f"Player pos:{self.player.pos}")
-           # print(f"Player Tile pos:{self.player.pos[0]//self.tilemap.tile_size, self.player.pos[1]//self.tilemap.tile_size}")
+                #print(f"Player pos:{self.player.pos}")
+                #print(f"Player Tile pos:{self.player.pos[0]//self.tilemap.tile_size, self.player.pos[1]//self.tilemap.tile_size}")
             
+             # [[x, y], direction, timer]
+            for projectile in self.projectiles.copy():
+                projectile[0][0] += projectile[1]
+                projectile[2] += 1
+                img = self.assets['projectile']
+                self.display.blit(img, (projectile[0][0] - img.get_width() / 2 - render_scroll[0], projectile[0][1] - img.get_height() / 2 - render_scroll[1]))
+                if self.tilemap.solid_check(projectile[0]):
+                    self.projectiles.remove(projectile)
+                    for i in range(4):
+                        self.sparks.append(Spark(projectile[0], random.random() - 0.5 + (math.pi if projectile[1] > 0 else 0), 2 + random.random()))
+                elif projectile[2] > 360:
+                    self.projectiles.remove(projectile)
+                elif abs(self.player.dashing) < 50:
+                    if self.player.rect().collidepoint(projectile[0]):
+                        self.projectiles.remove(projectile)
+                        self.dead += 1
+                        self.sfx['hit'].play()
+                        self.screenshake = max(16, self.screenshake)
+                        for i in range(30):
+                            angle = random.random() * math.pi * 2
+                            speed = random.random() * 5
+                            self.sparks.append(Spark(self.player.rect().center, angle, 2 + random.random()))
+                            self.particles.append(Particle(self, 'particle', self.player.rect().center, velocity=[math.cos(angle + math.pi) * speed * 0.5, math.sin(angle + math.pi) * speed * 0.5], frame=random.randint(0, 7)))
+                        
             if self.level_attributes[self.current_level].spawned_shape:
                 if isinstance(self.level_attributes[self.current_level].shape, Circle):
                     circle : Circle = self.level_attributes[self.current_level].shape # type:ignore
@@ -345,8 +392,12 @@ class Game:
                         self.boss_shape.delete() #type: ignore
                         self.level_attributes[self.current_level].spawned_shape = False
                         
-                    
-                    
+            if self.current_level == 2 and pygame.time.get_ticks() - self.boss_total_time > 60000: 
+                self.transition += 1 
+                if self.transition > 30:
+                    self.current_level = min(GameConfig.TOTAL_LEVELS - 1, self.current_level + 1)
+
+                    self.load_level(self.current_level)    
                     
 
                 
