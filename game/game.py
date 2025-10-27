@@ -20,16 +20,21 @@ class GameConfig:
     RENDER_SCALE = 2.0
 
 
-#def get_shape():
-#    return shape_type, shape_color
-                
+def get_shape():
+   return None
+
+
+
     
 class Level:
-    def __init__(self, id, has_spikes, shape, player_pos):
+    def __init__(self,game, id, has_spikes, shape, player_pos):
+        self.game = game
         self.id = id
         self.has_spikes = has_spikes
         self.shape = shape
         self.player_pos = list(player_pos)
+        self.spawned_shape = False
+        
 
         
 
@@ -78,6 +83,7 @@ class Game:
             'hit': pygame.mixer.Sound('data/sfx/hit.wav'),
             'shoot': pygame.mixer.Sound('data/sfx/shoot.wav'),
             'ambience': pygame.mixer.Sound('data/sfx/ambience.wav'),
+            'blast': pygame.mixer.Sound('data/sfx/blast.mp3')
 
         }
         
@@ -86,30 +92,55 @@ class Game:
         self.sfx['hit'].set_volume(0.8)
         self.sfx['dash'].set_volume(0.3)
         self.sfx['jump'].set_volume(0.7)
-
+        self.sfx['blast'].set_volume(0.8)
         
         self.clouds = Clouds(self.assets['clouds'], count = 16)
-        
-                
+          
         self.tilemap = Tilemap(self, tile_size = 16)
         
-        self.spikes = Spikes(self, 200, 500,(-60, 170), (0.5, 2.5))
+        self.spikes = Spikes(self, 400, 500,(-60, 170), (0.5, 2.5))
         
-        self.square = Shape(self, 'square', 'red', (1, 1))
-        self.triangle = Shape(self, 'triangle', 'red', (10, 1))
         self.current_level = 0
         
         self.level_attributes = {
-            0: Level(0,False,Shape(self, 'square', 'red', (12, 4)),(103 ,129)),
-            1: Level(1, False, Circle(self, 'blue', (135, 2), (16, 16)),(103, 129)),
-            2: Level(2, True, None, (103, 129))
+            0: Level(self, 0,False,Shape(self, 'square', 'red', (12, 4)),(103 ,129)),
+            1: Level(self, 1, False, Circle(self, 'blue', (135, 2), (16, 16)),(103, 129)),
+            2: Level(self, 2, True, self.boss_shape, (103, 129))
         }
+        
+
         
         self.load_level(self.current_level)
  
         self.screenshake = 0
 
         self.switched_boss_music = False
+        self.font = pygame.font.Font(None, 14)
+        self.boss_timer_start_ms = None
+        self.boss_big_blast_interval_ms = 20000
+        self.boss_big_blast_max_cooldown_ms = 10000
+        self.big_blast = False
+        self.boss_shape = None
+    def generate_random_shape(self, pos : list):
+    
+        shape_list = {
+            0: 'square',
+            1: 'triangle',
+            2: 'circle'
+        }
+        color_list = {
+                0:'red',
+                1:'blue',
+                2:'green',
+                3:'yellow'
+        }            
+        shape_type = random.randint(0, 1)
+        shape_color = random.randint(0, 3)
+    
+        if shape_type != 2:
+            return Shape(self,shape_list[shape_type], color_list[shape_color], pos)
+
+        return Circle(self, color_list[shape_color],pos,(16, 16))
     
     def load_level(self, map_id):
         self.player = Player(self, self.level_attributes[map_id].player_pos, (self.assets['player'].get_width(), self.assets['player'].get_height()))
@@ -128,7 +159,9 @@ class Game:
         self.dead = 0
         self.transition = -30
         
-            
+        if map_id == 2:
+            self.boss_timer_start_ms = pygame.time.get_ticks()
+      
                 
 
     def run(self): #! Can use the really cool particles for the big blast
@@ -142,12 +175,15 @@ class Game:
         
         while True:
             
-            
+           
             self.display.blit(self.assets['background'], (0, 0))
             
             self.screenshake = max(0, self.screenshake - 1)
-               
-
+            
+            detected_shape = get_shape()
+            self.level_attributes[self.current_level].spawned_shape = False
+            if detected_shape.type == self.level_attributes[self.current_level].shape.type and detected_shape.color == self.level_attributes[self.current_level].shape.color:
+                self.level_attributes[self.current_level].spawned_shape = True
             
             if any(tile.get('type') == 'door' for tile in self.tilemap.tiles_around(self.player.pos)):
                 self.transition += 1 
@@ -183,8 +219,8 @@ class Game:
             if not self.dead:
                 self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
                 self.player.render(self.display, offset = render_scroll)
-            print(f"Player pos:{self.player.pos}")
-            #print(f"Player Tile pos:{self.player.pos[0]//self.tilemap.tile_size, self.player.pos[1]//self.tilemap.tile_size}")
+            #print(f"Player pos:{self.player.pos}")
+           # print(f"Player Tile pos:{self.player.pos[0]//self.tilemap.tile_size, self.player.pos[1]//self.tilemap.tile_size}")
             
             if isinstance(self.level_attributes[self.current_level].shape, Circle):
                 circle : Circle = self.level_attributes[self.current_level].shape # type:ignore
@@ -200,9 +236,14 @@ class Game:
                 else:
                     self.level_attributes[self.current_level].shape.movement = [False, False] #type:ignore
             
+            #for spike in self.spikes.spikes:
+             #   print(spike.pos)
+            if self.big_blast and pygame.time.get_ticks() - self.boss_timer_start_ms < self.boss_big_blast_max_cooldown_ms:
+                pass
+            else:
+                self.spikes.update(self.player.rect(), self.tilemap,generate_random=not self.big_blast)
+                self.spikes.render(self.display, offset= render_scroll)
             
-            self.spikes.update(self.player.rect())
-            self.spikes.render(self.display, offset= render_scroll)
             
             if self.spikes.collided_player and self.dead == 0:
                 self.screenshake = max(16, self.screenshake)
@@ -249,7 +290,7 @@ class Game:
                         self.movement[1] = False
             
             if self.current_level == 1: 
-               if self.level_attributes[1].shape.pos[1] > 190: #type:ignore
+               if self.level_attributes[self.current_level].spawned_shape and self.level_attributes[1].shape.pos[1] > 190: #type:ignore
                     for y in range(1, 9):
                         loc = f"16;{y}"
                         self.tilemap.tilemap.pop(loc, None)
@@ -260,8 +301,45 @@ class Game:
                 pygame.mixer.music.load('data/boss_music.mp3')
                 pygame.mixer.music.set_volume(0.5)
                 pygame.mixer.music.play(-1)
+            if self.current_level == 2 and self.boss_timer_start_ms is not None:
+                elapsed_s = int((pygame.time.get_ticks() - self.boss_timer_start_ms) / 1000)
+                timer_surf = self.font.render(f"{elapsed_s}", True, (0, 0, 0))
+                self.display.blit(timer_surf, (4, 4))
+                
+                # Generate shape when interval is reached
+                if pygame.time.get_ticks() - self.boss_timer_start_ms >= self.boss_big_blast_interval_ms:
+                    if not self.big_blast:  # Only generate once
+                        self.boss_timer_start_ms = pygame.time.get_ticks()
+                        self.big_blast = True
+                        self.boss_timer_start_ms = pygame.time.get_ticks()
+                        self.spikes.delete()
+                        self.spikes.generate_vertical_spike_list(10, 50)
+                        self.boss_shape = self.generate_random_shape([6, 9])
+                        self.level_attributes[self.current_level].shape = self.boss_shape
+                        self.sfx['blast'].play(0)
+                
+                if self.big_blast:
+                    shape_img = self.assets[self.boss_shape.type][self.boss_shape.colors[self.boss_shape.color]].copy() #type:ignore
+                    shape_img.set_alpha(100)
                     
-            
+                    screen_x = 96 - int(self.scroll[0])
+                    screen_y = 145 - int(self.scroll[1])
+                    
+                    self.display.blit(shape_img, (screen_x, screen_y))
+                    if self.level_attributes[self.current_level].spawned_shape == True:
+                        self.boss_shape.spawn() 
+                    
+                    if pygame.time.get_ticks() - self.boss_timer_start_ms >= self.boss_big_blast_max_cooldown_ms + 1000:
+                        #print("Spaned shape")
+                        self.big_blast = False
+                        self.boss_timer_start_ms = pygame.time.get_ticks()
+                        self.boss_shape.delete()
+                        
+                    
+                    
+                    
+
+                
             
             if self.transition:
                 transition_surf = pygame.Surface(self.display.get_size())

@@ -200,11 +200,15 @@ class Spike:
         self.spawn_time = pygame.time.get_ticks()
         self.anim_offset = (-1, -1)   
         self.collided_player = False
+        self.collided_shape = False
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
 
-    def update(self, player_rect):
+    def update(self, player_rect, tilemap):
         
+        if not self.collided_shape and any(tile.get('type') in ('square', 'triangle') for tile in tilemap.tiles_around(self.pos)):
+            self.collided_shape = True
+            
         if not self.collided_player and player_rect.colliderect(self.rect()):
             self.collided_player = True
             for i in range(30):
@@ -244,27 +248,34 @@ class Spikes:
         
         self.max_spike_spawn_time_ms = int(15 * 1000)
     
+    def generate_vertical_spike_list(self, velocity, count):
+        self.delete()
+        interval = (self.max_y - self.min_y) / count
+        for spike_index in range(count):
+            #print(spike_index, spike_index * interval)
+            self.spikes.append(Spike(self.game,(self.start_x,self.min_y + spike_index * interval),velocity))
+    
     def delete(self):
         self.spikes.clear()
         
-    def update(self, player_rect):
+    def update(self, player_rect, tilemap, generate_random):
         if not self.enable_spawn:
             return
-        
-        if pygame.time.get_ticks() - self.last_spawn_ms >= self.spawn_interval:
-            self.last_spawn_ms = pygame.time.get_ticks()
-            start_y = random.randint(self.min_y, self.max_y)
-            spike_velocity = random.uniform(self.min_speed, self.max_speed)
-            
-            self.spikes.append(Spike(self.game,(self.start_x, start_y),spike_velocity))
-        
+        if generate_random:
+            if pygame.time.get_ticks() - self.last_spawn_ms >= self.spawn_interval:
+                self.last_spawn_ms = pygame.time.get_ticks()
+                start_y = random.randint(self.min_y, self.max_y)
+                spike_velocity = random.uniform(self.min_speed, self.max_speed)
+                self.spikes.append(Spike(self.game,(self.start_x, start_y),spike_velocity))
+                
         for spike_index, spike in enumerate(self.spikes):
-            spike.update(player_rect)
+            spike.update(player_rect, tilemap)
             
             if spike.collided_player:
                 self.collided_player = True
-                
                 self.spike_collided_player_index = spike_index
+            if spike.collided_shape:
+               self.spikes.remove(spike) 
             
             if pygame.time.get_ticks() - spike.spawn_time >= self.max_spike_spawn_time_ms:
                 self.spikes.remove(spike)

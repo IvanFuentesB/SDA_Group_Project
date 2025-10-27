@@ -25,15 +25,18 @@ class Shape: # This is just for triangles and squares, circles are a bit more co
            'variant': self.colors[self.color],
            'pos': list(self.tile_pos)
        }
+    def delete(self):
+        location = f"{self.tile_pos[0]};{self.tile_pos[1]}"
+        del self.game.tilemap.tilemap[location]
 class Circle():
     def __init__(self, game, color, pos, size):
         self.game = game
         self.size = size
         self.pos = list(pos)
         self.velocity : list[float] = [0, 0]
-        self.color = color 
-        self.type = 'circle/' + color
-        self.animation = self.game.assets[self.type].copy()
+        self.color = color
+        self.type = 'circle' 
+        self.animation = self.game.assets[f"{self.type}/{self.color}"].copy()
         self.collisions = {'up': False, 'down': False, 'left': False, 'right': False}
         self.spawned = False
         self.flip = False
