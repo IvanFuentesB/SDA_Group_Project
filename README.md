@@ -61,14 +61,6 @@ A multi-device 2D platformer where real-world geometric shapes detected through 
 - The game maps detected shapes into Pygame objects and flips `spawned_shape = True` when the right shape reaches the current level logic.
 - The repo code shows `TOTAL_LEVELS = 4`, a `FRAMERATE = 60`, and a boss-timed sequence in the third gameplay stage.
 
-### Course requirements reflected in the documentation
-
-- Python, Pygame, OpenCV, MQTT, keyboard and mouse control
-- At least `10` OOP classes plus state, class, and sequence diagrams
-- A 2D platformer linked to an external camera
-- Real geometric shape import into gameplay progression
-- Shape and color detection for squares, triangles, and circles
-
 <details>
 <summary><strong>Original project documentation proof pack</strong> — requirements, UML, sequence, and folder structure</summary>
 
@@ -139,3 +131,15 @@ python game/game.py
 ```
 
 Run the camera or vision side from the `camera/` folder.
+
+## Limitations
+
+- HSV thresholds are tuned for a fixed lighting scene; a calibration step is not yet implemented.
+- LS-mode confirmation (0.5 s) is a deliberate latency floor — faster confirmation would increase false positives.
+- DroidCam-first capture order is hard-coded; switching cameras requires a config change.
+
+## Next improvements
+
+- Runtime HSV calibration instead of constants.
+- MQTT-only transport with explicit reconnect logic.
+- OOP class summary table so the >=10-class requirement is greppable without opening the PDF.
