@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="800" viewBox="0 0 1400 800">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto"><path d="M0,0 L12,4 L0,8 Z" fill="#2563eb"/></marker>
+    <linearGradient id="blueGrad" x1="0" x2="1"><stop offset="0" stop-color="#e0f2fe"/><stop offset="1" stop-color="#eef2ff"/></linearGradient>
+    <linearGradient id="darkGrad" x1="0" x2="1"><stop offset="0" stop-color="#06192b"/><stop offset="1" stop-color="#0a2d45"/></linearGradient>
+    <filter id="soft"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.10"/></filter>
+    <style>
+      .title { font: 700 40px Inter, Segoe UI, Arial, sans-serif; fill:#0f172a; }
+      .subtitle { font: 400 19px Inter, Segoe UI, Arial, sans-serif; fill:#475569; }
+      .boxTitle { font: 700 22px Inter, Segoe UI, Arial, sans-serif; fill:#0f172a; }
+      .boxText { font: 400 16px Inter, Segoe UI, Arial, sans-serif; fill:#334155; }
+      .small { font: 600 13px ui-monospace, SFMono-Regular, Consolas, monospace; fill:#1d4ed8; }
+      .arrow { stroke:#2563eb; stroke-width:4; fill:none; marker-end:url(#arrow); }
+      .dash { stroke:#64748b; stroke-width:3; stroke-dasharray:10 8; fill:none; marker-end:url(#arrow); }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <text x="60" y="72" class="title">SDA OpenCV Detection Pipeline</text>
+  <text x="60" y="106" class="subtitle">Clean technical diagram for README hero/architecture section</text>
+<rect x="70" y="235" width="170" height="170" rx="22" fill="#f8fafc" stroke="#60a5fa" stroke-width="2.5" filter="url(#soft)"/>
+<text x="94" y="277" class="boxTitle">Frame input</text>
+<text x="94" y="307" class="boxText">DroidCam / USB</text>
+<text x="94" y="332" class="boxText">image frame</text>
+<rect x="280" y="235" width="170" height="170" rx="22" fill="#f8fafc" stroke="#60a5fa" stroke-width="2.5" filter="url(#soft)"/>
+<text x="304" y="277" class="boxTitle">Preprocess</text>
+<text x="304" y="307" class="boxText">LAB + CLAHE</text>
+<text x="304" y="332" class="boxText">sharpen</text>
+<rect x="500" y="235" width="170" height="170" rx="22" fill="#f8fafc" stroke="#60a5fa" stroke-width="2.5" filter="url(#soft)"/>
+<text x="524" y="277" class="boxTitle">Color masks</text>
+<text x="524" y="307" class="boxText">red green blue</text>
+<text x="524" y="332" class="boxText">yellow HSV</text>
+<rect x="720" y="235" width="170" height="170" rx="22" fill="#f8fafc" stroke="#60a5fa" stroke-width="2.5" filter="url(#soft)"/>
+<text x="744" y="277" class="boxTitle">Morphology</text>
+<text x="744" y="307" class="boxText">5x5 open/close</text>
+<text x="744" y="332" class="boxText">clean mask</text>
+<rect x="940" y="235" width="170" height="170" rx="22" fill="#f8fafc" stroke="#60a5fa" stroke-width="2.5" filter="url(#soft)"/>
+<text x="964" y="277" class="boxTitle">Contours</text>
+<text x="964" y="307" class="boxText">area &gt;= 1200</text>
+<text x="964" y="332" class="boxText">approxPolyDP</text>
+<rect x="1160" y="235" width="170" height="170" rx="22" fill="#f8fafc" stroke="#60a5fa" stroke-width="2.5" filter="url(#soft)"/>
+<text x="1184" y="277" class="boxTitle">MQTT event</text>
+<text x="1184" y="307" class="boxText">type color pos</text>
+<text x="1184" y="332" class="boxText">publish JSON</text>
+<path d="M240,320 C260,320 260,320 280,320" class="arrow"/>
+<path d="M450,320 C475,320 475,320 500,320" class="arrow"/>
+<path d="M670,320 C695,320 695,320 720,320" class="arrow"/>
+<path d="M890,320 C915,320 915,320 940,320" class="arrow"/>
+<path d="M1110,320 C1135,320 1135,320 1160,320" class="arrow"/>
+<rect x="470" y="520" width="420" height="120" rx="22" fill="#eff6ff" stroke="#60a5fa" stroke-width="2.5" filter="url(#soft)"/>
+<text x="494" y="562" class="boxTitle">Shape rules</text>
+<text x="494" y="592" class="boxText">circle: circularity &gt; 0.83</text>
+<text x="494" y="617" class="boxText">triangle: 3 vertices | quad: 4-6 vertices</text>
+<text x="494" y="642" class="boxText">best color mask &gt;= 60% coverage</text>
+</svg>

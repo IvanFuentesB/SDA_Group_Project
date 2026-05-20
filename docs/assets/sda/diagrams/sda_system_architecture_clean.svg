@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="800" viewBox="0 0 1400 800">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto"><path d="M0,0 L12,4 L0,8 Z" fill="#2563eb"/></marker>
+    <linearGradient id="blueGrad" x1="0" x2="1"><stop offset="0" stop-color="#e0f2fe"/><stop offset="1" stop-color="#eef2ff"/></linearGradient>
+    <linearGradient id="darkGrad" x1="0" x2="1"><stop offset="0" stop-color="#06192b"/><stop offset="1" stop-color="#0a2d45"/></linearGradient>
+    <filter id="soft"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.10"/></filter>
+    <style>
+      .title { font: 700 40px Inter, Segoe UI, Arial, sans-serif; fill:#0f172a; }
+      .subtitle { font: 400 19px Inter, Segoe UI, Arial, sans-serif; fill:#475569; }
+      .boxTitle { font: 700 22px Inter, Segoe UI, Arial, sans-serif; fill:#0f172a; }
+      .boxText { font: 400 16px Inter, Segoe UI, Arial, sans-serif; fill:#334155; }
+      .small { font: 600 13px ui-monospace, SFMono-Regular, Consolas, monospace; fill:#1d4ed8; }
+      .arrow { stroke:#2563eb; stroke-width:4; fill:none; marker-end:url(#arrow); }
+      .dash { stroke:#64748b; stroke-width:3; stroke-dasharray:10 8; fill:none; marker-end:url(#arrow); }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <text x="60" y="72" class="title">SDA Computer Vision Platformer</text>
+  <text x="60" y="106" class="subtitle">Two-device OpenCV + MQTT + Pygame architecture</text>
+<rect x="70" y="190" width="220" height="140" rx="22" fill="#f0f9ff" stroke="#60a5fa" stroke-width="2.5" filter="url(#soft)"/>
+<text x="94" y="232" class="boxTitle">Phone / DroidCam</text>
+<text x="94" y="262" class="boxText">camera feed</text>
+<text x="94" y="287" class="boxText">960 x 540</text>
+<rect x="360" y="190" width="220" height="140" rx="22" fill="#f0f9ff" stroke="#60a5fa" stroke-width="2.5" filter="url(#soft)"/>
+<text x="384" y="232" class="boxTitle">OpenCV detector</text>
+<text x="384" y="262" class="boxText">HSV masks</text>
+<text x="384" y="287" class="boxText">shape + color</text>
+<rect x="650" y="190" width="220" height="140" rx="22" fill="#eef2ff" stroke="#60a5fa" stroke-width="2.5" filter="url(#soft)"/>
+<text x="674" y="232" class="boxTitle">MQTT publisher</text>
+<text x="674" y="262" class="boxText">JSON payload</text>
+<text x="674" y="287" class="boxText">cv/shapes</text>
+<rect x="940" y="190" width="220" height="140" rx="22" fill="#eef2ff" stroke="#60a5fa" stroke-width="2.5" filter="url(#soft)"/>
+<text x="964" y="232" class="boxTitle">Mosquitto broker</text>
+<text x="964" y="262" class="boxText">topic routing</text>
+<text x="964" y="287" class="boxText">pub / sub</text>
+<rect x="1070" y="455" width="250" height="150" rx="22" fill="#fff7ed" stroke="#fb923c" stroke-width="2.5" filter="url(#soft)"/>
+<text x="1094" y="497" class="boxTitle">Pygame platformer</text>
+<text x="1094" y="527" class="boxText">spawn objects</text>
+<text x="1094" y="552" class="boxText">level progression</text>
+<text x="1094" y="577" class="boxText">boss sequence</text>
+<rect x="140" y="455" width="260" height="130" rx="22" fill="#f8fafc" stroke="#94a3b8" stroke-width="2.5" filter="url(#soft)"/>
+<text x="164" y="497" class="boxTitle">Config file</text>
+<text x="164" y="527" class="boxText">mqtt_ip</text>
+<text x="164" y="552" class="boxText">mqtt_port 1883</text>
+<path d="M290,260 C325,260 325,260 360,260" class="arrow"/>
+<path d="M580,260 C615,260 615,260 650,260" class="arrow"/>
+<path d="M870,260 C905,260 905,260 940,260" class="arrow"/>
+<path d="M1050,330 C1090,330 1090,455 1130,455" class="arrow"/>
+<path d="M400,520 C560,520 560,330 720,330" class="dash"/>
+<rect x="70" y="650" width="106" height="34" rx="17" fill="#dbeafe" stroke="#93c5fd"/><text x="87" y="673" class="small">Python</text>
+<rect x="180" y="650" width="106" height="34" rx="17" fill="#dbeafe" stroke="#93c5fd"/><text x="197" y="673" class="small">OpenCV</text>
+<rect x="310" y="650" width="82" height="34" rx="17" fill="#dbeafe" stroke="#93c5fd"/><text x="327" y="673" class="small">MQTT</text>
+<rect x="420" y="650" width="106" height="34" rx="17" fill="#dbeafe" stroke="#93c5fd"/><text x="437" y="673" class="small">Pygame</text>
+<rect x="540" y="650" width="214" height="34" rx="17" fill="#dbeafe" stroke="#93c5fd"/><text x="557" y="673" class="small">Serial fallback</text>
+<text x="70" y="720" class="subtitle">Real PDF proof pages are included separately: project definition, camera requirements, state/class/sequence diagrams and folder structure.</text></svg>
