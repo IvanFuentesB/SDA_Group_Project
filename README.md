@@ -1,10 +1,16 @@
 # Computer Vision Platformer
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/IvanFuentesB/delete/main/assets/case-studies/diagrams/svg/sda_01_multidevice_architecture.svg" alt="Computer Vision Platformer architecture" width="100%" />
+  <img src="docs/assets/branding/sda_fight_on_logo_title_crop.png" alt="Fight On title crop from official SDA PDF" width="220" />
 </p>
 
 A multi-device 2D platformer where real-world geometric shapes detected through a camera are converted into in-game objects and progression triggers. The project combines a Pygame platformer, an OpenCV shape-and-color pipeline, MQTT messaging, and serial-linked device workflows.
+
+## System architecture
+
+<p align="center">
+  <img src="docs/assets/diagrams/sda_system_architecture_clean.svg" alt="SDA system architecture clean diagram" width="100%" />
+</p>
 
 ## System at a glance
 
@@ -17,30 +23,13 @@ A multi-device 2D platformer where real-world geometric shapes detected through 
 | Vision target | Detect squares, triangles, and circles with color awareness |
 | Confirmation logic | LS mode with `CONFIRM_TIME = 0.5` |
 
-## Why the project is interesting
+## CV pipeline
 
-1. A physical object outside the game becomes a gameplay input inside the game loop.
-2. The camera pipeline does more than contour detection: it handles color, validation, timing, and messaging.
-3. The game side interprets those detections as actual progression logic rather than a disconnected demo overlay.
+<p align="center">
+  <img src="docs/assets/diagrams/sda_cv_pipeline_clean.svg" alt="SDA computer vision pipeline clean diagram" width="100%" />
+</p>
 
-## Visual system overview
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <img src="https://raw.githubusercontent.com/IvanFuentesB/delete/main/assets/case-studies/diagrams/svg/sda_02_cv_pipeline.svg" alt="OpenCV detection pipeline" width="100%" /><br/>
-      <strong>OpenCV detection pipeline</strong><br/>
-      LAB + CLAHE preprocessing, HSV masks, morphology, contour filtering, shape classification, and MQTT publication.
-    </td>
-    <td width="50%" valign="top">
-      <img src="https://raw.githubusercontent.com/IvanFuentesB/delete/main/assets/case-studies/diagrams/svg/sda_03_game_event_flow.svg" alt="Game event flow" width="100%" /><br/>
-      <strong>Game event flow</strong><br/>
-      MQTT messages are converted into Pygame objects and matched against level-specific requirements.
-    </td>
-  </tr>
-</table>
-
-## Confirmed implementation details
+## Implementation notes
 
 ### Camera and detection
 
@@ -61,60 +50,62 @@ A multi-device 2D platformer where real-world geometric shapes detected through 
 - The game maps detected shapes into Pygame objects and flips `spawned_shape = True` when the right shape reaches the current level logic.
 - The repo code shows `TOTAL_LEVELS = 4`, a `FRAMERATE = 60`, and a boss-timed sequence in the third gameplay stage.
 
+### Course-deliverable evidence reflected in the repo
+
+- Python, Pygame, OpenCV, MQTT, keyboard and mouse control
+- At least `10` OOP classes plus state, class, and sequence diagrams
+- A 2D platformer linked to an external camera
+- Real geometric shape import into gameplay progression
+- Shape and color detection for squares, triangles, and circles
+
 <details>
-<summary><strong>Original project documentation proof pack</strong> — requirements, UML, sequence, and folder structure</summary>
+<summary><strong>Official SDA PDF proof pack</strong> — title page, requirements, UML, sequence, and folder structure</summary>
 
 <br/>
 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="https://raw.githubusercontent.com/IvanFuentesB/delete/main/assets/case-studies/sda-pdf-real-images/sda_pdf_03_project_definition.png" alt="SDA project definition" width="100%" /><br/>
-      <strong>Project definition</strong><br/>
-      External-camera gameplay goal and shape-import mechanic from the course document.
+      <img src="docs/assets/proof/sda_pdf_page_01.png" alt="Official SDA PDF title page" width="100%" /><br/>
+      <strong>Official PDF title page</strong>
     </td>
     <td width="50%" valign="top">
-      <img src="https://raw.githubusercontent.com/IvanFuentesB/delete/main/assets/case-studies/sda-pdf-real-images/sda_pdf_06_camera_requirements.png" alt="SDA camera requirements" width="100%" /><br/>
-      <strong>Camera requirements</strong><br/>
-      Course requirements for shape type and color detection.
+      <img src="docs/assets/proof/sda_pdf_03_project_definition.png" alt="SDA project definition from official PDF" width="100%" /><br/>
+      <strong>Project definition</strong>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="https://raw.githubusercontent.com/IvanFuentesB/delete/main/assets/case-studies/sda-pdf-real-images/sda_pdf_07_state_diagram.png" alt="SDA state diagram" width="100%" /><br/>
-      <strong>State diagram</strong><br/>
-      Original state transitions for gameplay and camera-linked flow.
+      <img src="docs/assets/proof/sda_pdf_06_camera_requirements.png" alt="SDA camera requirements from official PDF" width="100%" /><br/>
+      <strong>Camera requirements</strong>
     </td>
     <td width="50%" valign="top">
-      <img src="https://raw.githubusercontent.com/IvanFuentesB/delete/main/assets/case-studies/sda-pdf-real-images/sda_pdf_08_class_diagram.png" alt="SDA class diagram" width="100%" /><br/>
-      <strong>Class diagram</strong><br/>
-      OOP structure supporting the game and its entities.
+      <img src="docs/assets/proof/sda_pdf_07_state_diagram.png" alt="SDA state diagram from official PDF" width="100%" /><br/>
+      <strong>State diagram</strong>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="https://raw.githubusercontent.com/IvanFuentesB/delete/main/assets/case-studies/sda-pdf-real-images/sda_pdf_09_sequence_diagram.png" alt="SDA sequence diagram" width="100%" /><br/>
-      <strong>Sequence diagram</strong><br/>
-      Messaging and interaction flow across camera, broker, and game logic.
+      <img src="docs/assets/proof/sda_pdf_08_class_diagram.png" alt="SDA class diagram from official PDF" width="100%" /><br/>
+      <strong>Class diagram</strong>
     </td>
     <td width="50%" valign="top">
-      <img src="https://raw.githubusercontent.com/IvanFuentesB/delete/main/assets/case-studies/sda-pdf-real-images/sda_pdf_10_game_folder_structure.png" alt="SDA game folder structure" width="100%" /><br/>
-      <strong>Game folder structure</strong><br/>
-      Supporting evidence for the actual project layout delivered in the course repo.
+      <img src="docs/assets/proof/sda_pdf_09_sequence_diagram.png" alt="SDA sequence diagram from official PDF" width="100%" /><br/>
+      <strong>Sequence diagram</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/assets/proof/sda_pdf_10_game_folder_structure.png" alt="SDA game folder structure from official PDF" width="100%" /><br/>
+      <strong>Game folder structure</strong>
+    </td>
+    <td width="50%" valign="top">
+      Proof pages are copied locally from the v4 pack so this README does not depend on external raw asset repos.
     </td>
   </tr>
 </table>
 
 </details>
-
-## Repository layout
-
-- `game/game.py` - main Pygame loop and level progression
-- `game/scripts/` - camera ingestion, tilemaps, entities, shapes, particles, and gameplay logic
-- `camera/MQTT/` - OpenCV camera detection, MQTT publishing, and config
-- `camera/Camera_get_shape/` - alternate camera-side detection path
-- `Executable Programs/` - packaged builds and deployment notes
-- `documentation/` - original course documentation PDF
 
 ## Run
 
@@ -132,14 +123,12 @@ python game/game.py
 
 Run the camera or vision side from the `camera/` folder.
 
-## Limitations
+## Limitations and next improvements
 
+- The README uses architecture diagrams and official documentation pages, not fabricated gameplay screenshots.
 - HSV thresholds are tuned for a fixed lighting scene; a calibration step is not yet implemented.
-- LS-mode confirmation (0.5 s) is a deliberate latency floor — faster confirmation would increase false positives.
-- DroidCam-first capture order is hard-coded; switching cameras requires a config change.
-
-## Next improvements
-
-- Runtime HSV calibration instead of constants.
-- MQTT-only transport with explicit reconnect logic.
-- OOP class summary table so the >=10-class requirement is greppable without opening the PDF.
+- LS-mode confirmation with `CONFIRM_TIME = 0.5` is a deliberate latency floor; reducing it would increase false positives.
+- DroidCam-first capture order is hard-coded, so switching cameras currently needs a config change.
+- A future pass could add real in-game captures if they are committed and verifiable.
+- The current proof is strongest in architecture, requirements, and repo-structure evidence rather than polished final-demo imagery.
+- Runtime HSV calibration, tighter MQTT reconnect handling, and an OOP class summary table would make the repo easier to inspect without opening the PDF.
