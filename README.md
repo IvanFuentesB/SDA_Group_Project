@@ -1,7 +1,7 @@
 # Computer Vision Platformer
 
 <p align="center">
-  <img src="docs/assets/branding/sda_fight_on_logo_title_crop.png" alt="Fight On title crop from official SDA PDF" width="220" />
+  <img src="docs/assets/sda/branding/sda_fight_on_logo_title_crop.png" alt="Fight On title crop from official SDA PDF" width="220" />
 </p>
 
 A multi-device 2D platformer where real-world geometric shapes detected through a camera are converted into in-game objects and progression triggers. The project combines a Pygame platformer, an OpenCV shape-and-color pipeline, MQTT messaging, and serial-linked device workflows.
@@ -9,7 +9,7 @@ A multi-device 2D platformer where real-world geometric shapes detected through 
 ## System architecture
 
 <p align="center">
-  <img src="docs/assets/diagrams/sda_system_architecture_clean.svg" alt="SDA system architecture clean diagram" width="100%" />
+  <img src="docs/assets/sda/diagrams/sda_system_architecture_clean.svg" alt="SDA system architecture clean diagram" width="100%" />
 </p>
 
 ## System at a glance
@@ -26,7 +26,7 @@ A multi-device 2D platformer where real-world geometric shapes detected through 
 ## CV pipeline
 
 <p align="center">
-  <img src="docs/assets/diagrams/sda_cv_pipeline_clean.svg" alt="SDA computer vision pipeline clean diagram" width="100%" />
+  <img src="docs/assets/sda/diagrams/sda_cv_pipeline_clean.svg" alt="SDA computer vision pipeline clean diagram" width="100%" />
 </p>
 
 ## Implementation notes
@@ -66,37 +66,37 @@ A multi-device 2D platformer where real-world geometric shapes detected through 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/assets/proof/sda_pdf_page_01.png" alt="Official SDA PDF title page" width="100%" /><br/>
+      <img src="docs/assets/sda/proof/sda_pdf_page_01.png" alt="Official SDA PDF title page" width="100%" /><br/>
       <strong>Official PDF title page</strong>
     </td>
     <td width="50%" valign="top">
-      <img src="docs/assets/proof/sda_pdf_03_project_definition.png" alt="SDA project definition from official PDF" width="100%" /><br/>
+      <img src="docs/assets/sda/proof/sda_pdf_03_project_definition.png" alt="SDA project definition from official PDF" width="100%" /><br/>
       <strong>Project definition</strong>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/assets/proof/sda_pdf_06_camera_requirements.png" alt="SDA camera requirements from official PDF" width="100%" /><br/>
+      <img src="docs/assets/sda/proof/sda_pdf_06_camera_requirements.png" alt="SDA camera requirements from official PDF" width="100%" /><br/>
       <strong>Camera requirements</strong>
     </td>
     <td width="50%" valign="top">
-      <img src="docs/assets/proof/sda_pdf_07_state_diagram.png" alt="SDA state diagram from official PDF" width="100%" /><br/>
+      <img src="docs/assets/sda/proof/sda_pdf_07_state_diagram.png" alt="SDA state diagram from official PDF" width="100%" /><br/>
       <strong>State diagram</strong>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/assets/proof/sda_pdf_08_class_diagram.png" alt="SDA class diagram from official PDF" width="100%" /><br/>
+      <img src="docs/assets/sda/proof/sda_pdf_08_class_diagram.png" alt="SDA class diagram from official PDF" width="100%" /><br/>
       <strong>Class diagram</strong>
     </td>
     <td width="50%" valign="top">
-      <img src="docs/assets/proof/sda_pdf_09_sequence_diagram.png" alt="SDA sequence diagram from official PDF" width="100%" /><br/>
+      <img src="docs/assets/sda/proof/sda_pdf_09_sequence_diagram.png" alt="SDA sequence diagram from official PDF" width="100%" /><br/>
       <strong>Sequence diagram</strong>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/assets/proof/sda_pdf_10_game_folder_structure.png" alt="SDA game folder structure from official PDF" width="100%" /><br/>
+      <img src="docs/assets/sda/proof/sda_pdf_10_game_folder_structure.png" alt="SDA game folder structure from official PDF" width="100%" /><br/>
       <strong>Game folder structure</strong>
     </td>
     <td width="50%" valign="top">
